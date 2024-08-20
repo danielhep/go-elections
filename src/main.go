@@ -1,14 +1,13 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
-	"github.com/go-pg/pg/v10"
-	"github.com/go-pg/pg/v10/orm"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type JurisdictionType string
@@ -20,67 +19,50 @@ const (
 
 // Structs to represent the data
 type Contest struct {
-	ID               int              `pg:"id,pk"`
-	Name             string           `pg:"name,notnull"`
-	JurisdictionType JurisdictionType `pg:"type,notnull"` // "State" or "County"
+	gorm.Model
+	Name             string
+	District         string
+	JurisdictionType JurisdictionType
+	Candidates       []Candidate
 }
 
 type Candidate struct {
-	ID        int      `pg:"id,pk"`
-	Name      string   `pg:"name,notnull"`
-	Party     string   `pg:"party"`
-	ContestID int      `pg:"contest_id,notnull"`
-	Contest   *Contest `pg:"rel:has-one"`
+	gorm.Model
+	Name      string
+	Party     string
+	ContestID uint
+	Contest   Contest
 }
 
 type Update struct {
-	ID               int              `pg:"id,pk"`
-	Timestamp        string           `pg:"timestamp,notnull"`
-	Hash             string           `pg:"hash,notnull"`
-	JurisdictionType JurisdictionType `pg:"type,notnull"` // "State" or "County"
+	gorm.Model
+	Timestamp        string
+	Hash             string
+	JurisdictionType JurisdictionType
+	VoteTallies      []VoteTally
 }
 
 type VoteTally struct {
-	ID          int        `pg:"id,pk"`
-	CandidateID int        `pg:"candidate_id,notnull"`
-	Candidate   *Candidate `pg:"rel:has-one"`
-	UpdateID    int        `pg:"update_id,notnull"`
-	Update      *Update    `pg:"rel:has-one"`
-	Votes       int        `pg:"votes,notnull"`
+	gorm.Model
+	CandidateID uint
+	Candidate   Candidate
+	UpdateID    uint
+	Update      Update
+	Votes       int
 }
 
 // Function to check for updates
-func checkForUpdates(db *pg.DB) error {
+func checkForUpdates(db *gorm.DB) error {
 	stateURL := os.Getenv("STATE_DATA")
-	countyURL := os.Getenv("COUNTY_DATA")
+	// countyURL := os.Getenv("COUNTY_DATA")
 
 	if err := checkAndProcessUpdate(db, stateURL, StateJurisdiction); err != nil {
 		return err
 	}
 
-	if err := checkAndProcessUpdate(db, countyURL, CountyJurisdiction); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func createSchema(db *pg.DB) error {
-	models := []interface{}{
-		(*Contest)(nil),
-		(*Candidate)(nil),
-		(*Update)(nil),
-		(*VoteTally)(nil),
-	}
-
-	for _, model := range models {
-		err := db.Model(model).CreateTable(&orm.CreateTableOptions{
-			IfNotExists: true,
-		})
-		if err != nil {
-			return err
-		}
-	}
+	// if err := checkAndProcessUpdate(db, countyURL, CountyJurisdiction); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -93,29 +75,21 @@ func main() {
 		log.Fatal("PG_URL environment variable is not set")
 	}
 
-	// Parse the connection string and connect to the database
-	opt, err := pg.ParseURL(pgURL)
+	// Connect to the database
+	db, err := gorm.Open(postgres.Open(pgURL), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("Failed to parse PG_URL: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	db := pg.Connect(opt)
-	defer db.Close()
-
-	// Check the connection
-	ctx := context.Background()
-	if err := db.Ping(ctx); err != nil {
-		log.Fatal(err)
+	// AutoMigrate the schema
+	err = db.AutoMigrate(&Contest{}, &Candidate{}, &Update{}, &VoteTally{})
+	if err != nil {
+		log.Fatalf("Failed to migrate database schema: %v", err)
 	}
-
-	// Create the schema
-	if err := createSchema(db); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Schema created successfully")
+	fmt.Println("Schema migrated successfully")
 
 	// Set up a ticker to periodically check for updates
-	updateInterval := 5 * time.Minute // Check every 5 minutes
+	updateInterval := time.Second
 	ticker := time.NewTicker(updateInterval)
 	defer ticker.Stop()
 

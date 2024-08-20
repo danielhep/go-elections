@@ -31,7 +31,11 @@
   enterShell = ''
     echo "Go development environment loaded!"
     echo "Go version: $(go version)"
-    echo "Redis URL: $REDIS_URL"
+    echo "Postgres URL: $PG_URL"
+  '';
+
+  scripts.run.exec = ''
+    go run src/*.go
   '';
 
   # Project-specific configurations

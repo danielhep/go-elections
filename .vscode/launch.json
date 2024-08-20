@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch with devenv",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/src",
+            "env": {},
+            "args": [],
+            "envFile": "${workspaceFolder}/.env",
+            "preLaunchTask": "load-devenv"
+        }
+    ]
+}

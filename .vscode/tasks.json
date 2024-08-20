@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "load-devenv",
+            "type": "shell",
+            "command": "devenv shell printenv > ${workspaceFolder}/.env",
+            "problemMatcher": []
+        }
+    ]
+}

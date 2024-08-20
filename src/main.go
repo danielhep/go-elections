@@ -29,7 +29,7 @@ type Contest struct {
 type Candidate struct {
 	gorm.Model
 	Name      string
-	Party     string
+	Party     *string
 	ContestID uint
 	Contest   Contest
 }
@@ -47,6 +47,8 @@ type VoteTally struct {
 	CandidateID uint
 	Candidate   Candidate
 	UpdateID    uint
+	Contest     Contest
+	ContestID   uint
 	Update      Update
 	Votes       int
 }
@@ -58,7 +60,7 @@ func initalLoad(db *gorm.DB) error {
 	if err != nil {
 		return fmt.Errorf("error scraping %s data: %v", StateJurisdiction, err)
 	}
-	if err := loadCandidates(db, data, StateJurisdiction); err != nil {
+	if err := loadCandidates(db, data); err != nil {
 		return err
 	}
 	if err := checkAndProcessUpdate(db, data, hash, StateJurisdiction); err != nil {
@@ -69,7 +71,7 @@ func initalLoad(db *gorm.DB) error {
 	if err != nil {
 		return fmt.Errorf("error scraping %s data: %v", CountyJurisdiction, err)
 	}
-	if err := loadCandidates(db, data, CountyJurisdiction); err != nil {
+	if err := loadCandidates(db, data); err != nil {
 		return err
 	}
 	if err := checkAndProcessUpdate(db, data, hash, CountyJurisdiction); err != nil {

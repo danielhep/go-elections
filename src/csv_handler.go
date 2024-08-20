@@ -26,6 +26,18 @@ type StateCSVRecord struct {
 	JurisdictionName       string  `csv:"JurisdictionName"`
 }
 
+func (rec StateCSVRecord) ToGeneric() GenericVoteRecord {
+	contestName, district := extractContestInfo(rec.Race)
+	return GenericVoteRecord{
+		DistrictName:     normalizeString(district),
+		BallotTitle:      normalizeString(contestName),
+		BallotResponse:   normalizeString(rec.Candidate),
+		Votes:            rec.Votes,
+		PartyPreference:  extractParty(rec.Party),
+		JurisdictionType: StateJurisdiction,
+	}
+}
+
 // CountyCSVRecord represents the structure of each row in the county CSV file
 type CountyCSVRecord struct {
 	GEMSContestID               string  `csv:"GEMS Contest ID"`
@@ -44,8 +56,28 @@ type CountyCSVRecord struct {
 	PercentOfVotes              float64 `csv:"Percent of Votes"`
 }
 
+type GenericVoteRecord struct {
+	DistrictName     string
+	BallotTitle      string
+	BallotResponse   string
+	Votes            int
+	PartyPreference  string
+	JurisdictionType JurisdictionType
+}
+
+func (rec CountyCSVRecord) ToGeneric() GenericVoteRecord {
+	return GenericVoteRecord{
+		DistrictName:     normalizeString(rec.DistrictName),
+		BallotTitle:      normalizeString(rec.BallotTitle),
+		BallotResponse:   normalizeString(rec.BallotResponse),
+		Votes:            rec.Votes,
+		PartyPreference:  extractParty(rec.PartyPreference),
+		JurisdictionType: CountyJurisdiction,
+	}
+}
+
 // Function to scrape and parse CSV data
-func scrapeAndParse(url string, jurisdictionType JurisdictionType) (interface{}, string, error) {
+func scrapeAndParse(url string, jurisdictionType JurisdictionType) ([]GenericVoteRecord, string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, "", err
@@ -56,20 +88,24 @@ func scrapeAndParse(url string, jurisdictionType JurisdictionType) (interface{},
 	hashReader := sha256.New()
 	teeReader := io.TeeReader(resp.Body, hashReader)
 
-	var records interface{}
+	var records []GenericVoteRecord
 	switch jurisdictionType {
 	case StateJurisdiction:
 		var stateRecords []*StateCSVRecord
 		if err := gocsv.Unmarshal(teeReader, &stateRecords); err != nil {
 			return nil, "", err
 		}
-		records = stateRecords
+		for _, record := range stateRecords {
+			records = append(records, record.ToGeneric())
+		}
 	case CountyJurisdiction:
 		var countyRecords []*CountyCSVRecord
 		if err := gocsv.Unmarshal(teeReader, &countyRecords); err != nil {
 			return nil, "", err
 		}
-		records = countyRecords
+		for _, record := range countyRecords {
+			records = append(records, record.ToGeneric())
+		}
 	default:
 		return nil, "", fmt.Errorf("unknown jurisdiction type: %s", jurisdictionType)
 	}
@@ -81,7 +117,7 @@ func scrapeAndParse(url string, jurisdictionType JurisdictionType) (interface{},
 }
 
 // Function to check and process updates for a specific jurisdiction
-func checkAndProcessUpdate(db *gorm.DB, data interface{}, hash string, jurisdictionType JurisdictionType) error {
+func checkAndProcessUpdate(db *gorm.DB, data []GenericVoteRecord, hash string, jurisdictionType JurisdictionType) error {
 	var lastUpdate Update
 	result := db.Where("jurisdiction_type = ?", jurisdictionType).Order("id DESC").First(&lastUpdate)
 	if result.Error == gorm.ErrRecordNotFound {
@@ -103,19 +139,12 @@ func checkAndProcessUpdate(db *gorm.DB, data interface{}, hash string, jurisdict
 	return nil
 }
 
-func loadCandidates(db *gorm.DB, data interface{}, jurisdictionType JurisdictionType) error {
+func loadCandidates(db *gorm.DB, data []GenericVoteRecord) error {
 	// Process the data based on jurisdiction type
 	var contests []Contest
 	var err error
 
-	switch jurisdictionType {
-	case StateJurisdiction:
-		contests, err = processStateData(data.([]*StateCSVRecord))
-	case CountyJurisdiction:
-		contests, err = processCountyData(data.([]*CountyCSVRecord))
-	default:
-		err = fmt.Errorf("unknown jurisdiction type: %s", jurisdictionType)
-	}
+	contests, err = processContests(data)
 
 	tx := db.Begin()
 	// Ensure rollback if panic occurs
@@ -130,7 +159,7 @@ func loadCandidates(db *gorm.DB, data interface{}, jurisdictionType Jurisdiction
 		return err
 	}
 
-	fmt.Printf("Loading %v contests for %v.\n", len(contests), jurisdictionType)
+	fmt.Printf("Loading %v contests.\n", len(contests))
 
 	totalCandidates := 0
 	// Insert contests and candidates into the database
@@ -155,7 +184,7 @@ func loadCandidates(db *gorm.DB, data interface{}, jurisdictionType Jurisdiction
 }
 
 // Function to update database
-func updateVoteTallies(db *gorm.DB, data interface{}, jurisdictionType JurisdictionType, hash string) error {
+func updateVoteTallies(db *gorm.DB, data []GenericVoteRecord, jurisdictionType JurisdictionType, hash string) error {
 	// Start a transaction
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -181,28 +210,79 @@ func updateVoteTallies(db *gorm.DB, data interface{}, jurisdictionType Jurisdict
 		return err
 	}
 
-	_ = data
+	// Preload existing contests and candidates
+	var contests []Contest
+	var candidates []Candidate
+	if err := tx.Find(&contests).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Find(&candidates).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Create maps for quick lookups
+	contestMap := make(map[string]uint)
+	for _, c := range contests {
+		key := fmt.Sprintf("%s-%s-%s", c.Name, c.District, c.JurisdictionType)
+		contestMap[key] = c.ID
+	}
+
+	candidateMap := make(map[string]uint)
+	for _, c := range candidates {
+		key := fmt.Sprintf("%d-%s", c.ContestID, c.Name)
+		candidateMap[key] = c.ID
+	}
+	// Process vote tallies
+	var voteTallies []VoteTally
+	for _, record := range data {
+		contestKey := fmt.Sprintf("%s-%s-%s", record.BallotTitle, record.DistrictName, record.JurisdictionType)
+		contestID, contestExists := contestMap[contestKey]
+		if !contestExists {
+			tx.Rollback()
+			return fmt.Errorf("contest not found: %s", contestKey)
+		}
+		candidateKey := fmt.Sprintf("%d-%s", contestID, record.BallotResponse)
+		candidateID, candidateExists := candidateMap[candidateKey]
+		if !candidateExists {
+			tx.Rollback()
+			return fmt.Errorf("candidate not found: %s", candidateKey)
+		}
+		// Create vote tally
+		voteTally := VoteTally{
+			CandidateID: candidateID,
+			UpdateID:    update.ID,
+			Votes:       record.Votes,
+			ContestID:   contestID,
+		}
+		voteTallies = append(voteTallies, voteTally)
+	}
+	// Insert vote tallies in batches
+	if len(voteTallies) > 0 {
+		fmt.Printf("Loading %v vote tallies for %v\n", len(voteTallies), jurisdictionType)
+		if err := tx.CreateInBatches(voteTallies, 100).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error creating vote tallies: %v", err)
+		}
+	}
 
 	return tx.Commit().Error
 }
 
 // Function to process state-level data
-func processStateData(records []*StateCSVRecord) ([]Contest, error) {
+func processContests(records []GenericVoteRecord) ([]Contest, error) {
 	contestMap := make(map[string]*Contest)
 
 	for _, record := range records {
-		contestName, district := extractContestInfo(record.Race)
-		candidateName := normalizeString(record.Candidate)
-		party := extractParty(record.Party)
-
 		// Create or get Contest
-		contestKey := fmt.Sprintf("%s-%s", contestName, district)
+		contestKey := fmt.Sprintf("%s-%s", record.BallotTitle, record.DistrictName)
 		contest, exists := contestMap[contestKey]
 		if !exists {
 			contest = &Contest{
-				Name:             contestName,
-				District:         district,
-				JurisdictionType: StateJurisdiction,
+				Name:             record.BallotTitle,
+				District:         record.DistrictName,
+				JurisdictionType: record.JurisdictionType,
 				Candidates:       []Candidate{},
 			}
 			contestMap[contestKey] = contest
@@ -210,51 +290,11 @@ func processStateData(records []*StateCSVRecord) ([]Contest, error) {
 
 		// Create Candidate and add to Contest
 		candidate := Candidate{
-			Name:  candidateName,
-			Party: party,
+			Name:  record.BallotResponse,
+			Party: &record.PartyPreference,
 		}
 		contest.Candidates = append(contest.Candidates, candidate)
 	}
-	// Convert map to slice
-	contests := make([]Contest, 0, len(contestMap))
-	for _, contest := range contestMap {
-		contests = append(contests, *contest)
-	}
-
-	return contests, nil
-}
-
-// Function to process county-level data
-func processCountyData(records []*CountyCSVRecord) ([]Contest, error) {
-	contestMap := make(map[string]*Contest)
-
-	for _, row := range records {
-		contestName := normalizeString(row.BallotTitle)
-		district := normalizeString(row.DistrictName)
-		candidateName := normalizeString(row.BallotResponse)
-		party := extractParty(row.PartyPreference)
-
-		// Create or get Contest
-		contestKey := fmt.Sprintf("%s-%s", contestName, district)
-		contest, exists := contestMap[contestKey]
-		if !exists {
-			contest = &Contest{
-				Name:             contestName,
-				District:         district,
-				JurisdictionType: CountyJurisdiction,
-				Candidates:       []Candidate{},
-			}
-			contestMap[contestKey] = contest
-		}
-
-		// Create Candidate and add to Contest
-		candidate := Candidate{
-			Name:  candidateName,
-			Party: party,
-		}
-		contest.Candidates = append(contest.Candidates, candidate)
-	}
-
 	// Convert map to slice
 	contests := make([]Contest, 0, len(contestMap))
 	for _, contest := range contestMap {

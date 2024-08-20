@@ -3,7 +3,7 @@
 {
   # Packages to install
   packages = with pkgs; [
-    go
+    go_1_23
     gopls
     gotools
     go-tools

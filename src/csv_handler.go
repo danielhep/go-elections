@@ -108,8 +108,7 @@ func updateDatabase(db *gorm.DB, data [][]string, jurisdictionType JurisdictionT
 	case StateJurisdiction:
 		contests, err = processStateData(data)
 	case CountyJurisdiction:
-		// TODO: Implement county data processing
-		err = fmt.Errorf("county data processing not implemented yet")
+		contests, err = processCountyData(data)
 	default:
 		err = fmt.Errorf("unknown jurisdiction type: %s", jurisdictionType)
 	}
@@ -174,6 +173,54 @@ func processStateData(data [][]string) ([]Contest, error) {
 		}
 		contest.Candidates = append(contest.Candidates, candidate)
 	}
+	// Convert map to slice
+	contests := make([]Contest, 0, len(contestMap))
+	for _, contest := range contestMap {
+		contests = append(contests, *contest)
+	}
+
+	return contests, nil
+}
+
+// Function to process county-level data
+func processCountyData(data [][]string) ([]Contest, error) {
+	contestMap := make(map[string]*Contest)
+
+	for i, row := range data {
+		if i == 0 { // Skip header row
+			continue
+		}
+
+		if len(row) < 10 {
+			return nil, fmt.Errorf("row %d has insufficient columns", i)
+		}
+
+		contestName := normalizeString(row[5])
+		district := normalizeString(row[4])
+		candidateName := normalizeString(row[10])
+		party := extractParty(row[11])
+
+		// Create or get Contest
+		contestKey := fmt.Sprintf("%s-%s", contestName, district)
+		contest, exists := contestMap[contestKey]
+		if !exists {
+			contest = &Contest{
+				Name:             contestName,
+				District:         district,
+				JurisdictionType: CountyJurisdiction,
+				Candidates:       []Candidate{},
+			}
+			contestMap[contestKey] = contest
+		}
+
+		// Create Candidate and add to Contest
+		candidate := Candidate{
+			Name:  candidateName,
+			Party: party,
+		}
+		contest.Candidates = append(contest.Candidates, candidate)
+	}
+
 	// Convert map to slice
 	contests := make([]Contest, 0, len(contestMap))
 	for _, contest := range contestMap {

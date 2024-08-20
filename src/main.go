@@ -54,15 +54,15 @@ type VoteTally struct {
 // Function to check for updates
 func checkForUpdates(db *gorm.DB) error {
 	stateURL := os.Getenv("STATE_DATA")
-	// countyURL := os.Getenv("COUNTY_DATA")
+	countyURL := os.Getenv("COUNTY_DATA")
 
 	if err := checkAndProcessUpdate(db, stateURL, StateJurisdiction); err != nil {
 		return err
 	}
 
-	// if err := checkAndProcessUpdate(db, countyURL, CountyJurisdiction); err != nil {
-	// 	return err
-	// }
+	if err := checkAndProcessUpdate(db, countyURL, CountyJurisdiction); err != nil {
+		return err
+	}
 
 	return nil
 }

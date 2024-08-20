@@ -38,6 +38,21 @@
     go run src/*.go
   '';
 
+  scripts.drop-all.exec = ''
+    psql -U postgres -d elections <<EOF
+    DO \$\$
+    DECLARE
+      r RECORD;
+    BEGIN
+      FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+        EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+      END LOOP;
+    END
+    \$\$;
+    EOF
+    echo "All tables have been dropped."
+  '';
+
   # Project-specific configurations
   dotenv.enable = true;
   dotenv.filename = ".env";

@@ -18,3 +18,5 @@ require (
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/text v0.17.0 // direct
 )
+
+require github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1 // direct

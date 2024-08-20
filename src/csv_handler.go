@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"crypto/sha256"
-	"encoding/csv"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -12,13 +10,42 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gocarina/gocsv"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"gorm.io/gorm"
 )
 
+// StateCSVRecord represents the structure of each row in the state CSV file
+type StateCSVRecord struct {
+	Race                   string  `csv:"Race"`
+	Candidate              string  `csv:"Candidate"`
+	Party                  string  `csv:"Party"`
+	Votes                  int     `csv:"Votes"`
+	PercentageOfTotalVotes float64 `csv:"PercentageOfTotalVotes"`
+	JurisdictionName       string  `csv:"JurisdictionName"`
+}
+
+// CountyCSVRecord represents the structure of each row in the county CSV file
+type CountyCSVRecord struct {
+	GEMSContestID               string  `csv:"GEMS Contest ID"`
+	ContestSortSeq              int     `csv:"Contest Sort Seq"`
+	DistrictType                string  `csv:"District Type"`
+	DistrictTypeSubheading      string  `csv:"District Type Subheading"`
+	DistrictName                string  `csv:"District Name"`
+	BallotTitle                 string  `csv:"Ballot Title"`
+	BallotsCountedForDistrict   int     `csv:"Ballots Counted for District"`
+	RegisteredVotersForDistrict int     `csv:"Registered Voters for District"`
+	PercentTurnoutForDistrict   float64 `csv:"Percent Turnout for District"`
+	CandidateSortSeq            int     `csv:"Candidate Sort Seq"`
+	BallotResponse              string  `csv:"Ballot Response"`
+	PartyPreference             string  `csv:"Party Preference"`
+	Votes                       int     `csv:"Votes"`
+	PercentOfVotes              float64 `csv:"Percent of Votes"`
+}
+
 // Function to scrape and parse CSV data
-func scrapeAndParse(url string) ([][]string, string, error) {
+func scrapeAndParse(url string, jurisdictionType JurisdictionType) (interface{}, string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, "", err
@@ -29,14 +56,22 @@ func scrapeAndParse(url string) ([][]string, string, error) {
 	hashReader := sha256.New()
 	teeReader := io.TeeReader(resp.Body, hashReader)
 
-	// Create a buffered reader for CSV parsing
-	bufReader := bufio.NewReader(teeReader)
-
-	// Parse CSV
-	csvReader := csv.NewReader(bufReader)
-	records, err := csvReader.ReadAll()
-	if err != nil {
-		return nil, "", err
+	var records interface{}
+	switch jurisdictionType {
+	case StateJurisdiction:
+		var stateRecords []*StateCSVRecord
+		if err := gocsv.Unmarshal(teeReader, &stateRecords); err != nil {
+			return nil, "", err
+		}
+		records = stateRecords
+	case CountyJurisdiction:
+		var countyRecords []*CountyCSVRecord
+		if err := gocsv.Unmarshal(teeReader, &countyRecords); err != nil {
+			return nil, "", err
+		}
+		records = countyRecords
+	default:
+		return nil, "", fmt.Errorf("unknown jurisdiction type: %s", jurisdictionType)
 	}
 
 	// Calculate hash
@@ -47,7 +82,7 @@ func scrapeAndParse(url string) ([][]string, string, error) {
 
 // Function to check and process updates for a specific jurisdiction
 func checkAndProcessUpdate(db *gorm.DB, url string, jurisdictionType JurisdictionType) error {
-	data, hash, err := scrapeAndParse(url)
+	data, hash, err := scrapeAndParse(url, jurisdictionType)
 	if err != nil {
 		return fmt.Errorf("error scraping %s data: %v", jurisdictionType, err)
 	}
@@ -74,7 +109,7 @@ func checkAndProcessUpdate(db *gorm.DB, url string, jurisdictionType Jurisdictio
 }
 
 // Function to update database
-func updateDatabase(db *gorm.DB, data [][]string, jurisdictionType JurisdictionType, hash string) error {
+func updateDatabase(db *gorm.DB, data interface{}, jurisdictionType JurisdictionType, hash string) error {
 	// Start a transaction
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -106,9 +141,9 @@ func updateDatabase(db *gorm.DB, data [][]string, jurisdictionType JurisdictionT
 
 	switch jurisdictionType {
 	case StateJurisdiction:
-		contests, err = processStateData(data)
+		contests, err = processStateData(data.([]*StateCSVRecord))
 	case CountyJurisdiction:
-		contests, err = processCountyData(data)
+		contests, err = processCountyData(data.([]*CountyCSVRecord))
 	default:
 		err = fmt.Errorf("unknown jurisdiction type: %s", jurisdictionType)
 	}
@@ -120,12 +155,12 @@ func updateDatabase(db *gorm.DB, data [][]string, jurisdictionType JurisdictionT
 
 	// Insert contests and candidates into the database
 	for _, contest := range contests {
-		if err := tx.FirstOrCreate(&contest, Contest{Name: contest.Name, District: contest.District, JurisdictionType: contest.JurisdictionType}).Error; err != nil {
+		if err := tx.FirstOrCreate(&contest, contest).Error; err != nil {
 			tx.Rollback()
 			return fmt.Errorf("error creating contest: %v", err)
 		}
 		for _, candidate := range contest.Candidates {
-			if err := tx.FirstOrCreate(&candidate, Candidate{Name: candidate.Name, Party: candidate.Party, ContestID: candidate.ContestID}).Error; err != nil {
+			if err := tx.FirstOrCreate(&candidate, candidate).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("error creating candidate: %v", err)
 			}
@@ -137,21 +172,13 @@ func updateDatabase(db *gorm.DB, data [][]string, jurisdictionType JurisdictionT
 }
 
 // Function to process state-level data
-func processStateData(data [][]string) ([]Contest, error) {
+func processStateData(records []*StateCSVRecord) ([]Contest, error) {
 	contestMap := make(map[string]*Contest)
 
-	for i, row := range data {
-		if i == 0 { // Skip header row
-			continue
-		}
-
-		if len(row) < 5 {
-			return nil, fmt.Errorf("row %d has insufficient columns", i)
-		}
-
-		contestName, district := extractContestInfo(row[0])
-		candidateName := normalizeString(row[1])
-		party := extractParty(row[2])
+	for _, record := range records {
+		contestName, district := extractContestInfo(record.Race)
+		candidateName := normalizeString(record.Candidate)
+		party := extractParty(record.Party)
 
 		// Create or get Contest
 		contestKey := fmt.Sprintf("%s-%s", contestName, district)
@@ -183,22 +210,14 @@ func processStateData(data [][]string) ([]Contest, error) {
 }
 
 // Function to process county-level data
-func processCountyData(data [][]string) ([]Contest, error) {
+func processCountyData(records []*CountyCSVRecord) ([]Contest, error) {
 	contestMap := make(map[string]*Contest)
 
-	for i, row := range data {
-		if i == 0 { // Skip header row
-			continue
-		}
-
-		if len(row) < 10 {
-			return nil, fmt.Errorf("row %d has insufficient columns", i)
-		}
-
-		contestName := normalizeString(row[5])
-		district := normalizeString(row[4])
-		candidateName := normalizeString(row[10])
-		party := extractParty(row[11])
+	for _, row := range records {
+		contestName := normalizeString(row.BallotTitle)
+		district := normalizeString(row.DistrictName)
+		candidateName := normalizeString(row.BallotResponse)
+		party := extractParty(row.PartyPreference)
 
 		// Create or get Contest
 		contestKey := fmt.Sprintf("%s-%s", contestName, district)

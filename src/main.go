@@ -51,16 +51,51 @@ type VoteTally struct {
 	Votes       int
 }
 
+func initalLoad(db *gorm.DB) error {
+	stateURL := os.Getenv("STATE_DATA")
+	countyURL := os.Getenv("COUNTY_DATA")
+	data, hash, err := scrapeAndParse(stateURL, StateJurisdiction)
+	if err != nil {
+		return fmt.Errorf("error scraping %s data: %v", StateJurisdiction, err)
+	}
+	if err := loadCandidates(db, data, StateJurisdiction); err != nil {
+		return err
+	}
+	if err := checkAndProcessUpdate(db, data, hash, StateJurisdiction); err != nil {
+		return err
+	}
+
+	data, hash, err = scrapeAndParse(countyURL, CountyJurisdiction)
+	if err != nil {
+		return fmt.Errorf("error scraping %s data: %v", CountyJurisdiction, err)
+	}
+	if err := loadCandidates(db, data, CountyJurisdiction); err != nil {
+		return err
+	}
+	if err := checkAndProcessUpdate(db, data, hash, CountyJurisdiction); err != nil {
+		return err
+	}
+	return nil
+}
+
 // Function to check for updates
 func checkForUpdates(db *gorm.DB) error {
 	stateURL := os.Getenv("STATE_DATA")
 	countyURL := os.Getenv("COUNTY_DATA")
 
-	if err := checkAndProcessUpdate(db, stateURL, StateJurisdiction); err != nil {
+	data, hash, err := scrapeAndParse(stateURL, StateJurisdiction)
+	if err != nil {
+		return fmt.Errorf("error scraping %s data: %v", StateJurisdiction, err)
+	}
+	if err := checkAndProcessUpdate(db, data, hash, StateJurisdiction); err != nil {
 		return err
 	}
 
-	if err := checkAndProcessUpdate(db, countyURL, CountyJurisdiction); err != nil {
+	data, hash, err = scrapeAndParse(countyURL, CountyJurisdiction)
+	if err != nil {
+		return fmt.Errorf("error scraping %s data: %v", CountyJurisdiction, err)
+	}
+	if err := checkAndProcessUpdate(db, data, hash, CountyJurisdiction); err != nil {
 		return err
 	}
 
@@ -94,7 +129,7 @@ func main() {
 	defer ticker.Stop()
 
 	// Run the first check immediately
-	if err := checkForUpdates(db); err != nil {
+	if err := initalLoad(db); err != nil {
 		log.Printf("Error checking for updates: %v", err)
 	}
 

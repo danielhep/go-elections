@@ -81,24 +81,19 @@ func scrapeAndParse(url string, jurisdictionType JurisdictionType) (interface{},
 }
 
 // Function to check and process updates for a specific jurisdiction
-func checkAndProcessUpdate(db *gorm.DB, url string, jurisdictionType JurisdictionType) error {
-	data, hash, err := scrapeAndParse(url, jurisdictionType)
-	if err != nil {
-		return fmt.Errorf("error scraping %s data: %v", jurisdictionType, err)
-	}
-
+func checkAndProcessUpdate(db *gorm.DB, data interface{}, hash string, jurisdictionType JurisdictionType) error {
 	var lastUpdate Update
 	result := db.Where("jurisdiction_type = ?", jurisdictionType).Order("id DESC").First(&lastUpdate)
 	if result.Error == gorm.ErrRecordNotFound {
 		log.Printf("First %s update detected", jurisdictionType)
-		if err := updateDatabase(db, data, jurisdictionType, hash); err != nil {
+		if err := updateVoteTallies(db, data, jurisdictionType, hash); err != nil {
 			return fmt.Errorf("error updating %s data: %v", jurisdictionType, err)
 		}
 	} else if result.Error != nil {
 		return fmt.Errorf("error querying %s update: %v", jurisdictionType, result.Error)
 	} else if lastUpdate.Hash != hash {
 		log.Printf("%s data change detected", jurisdictionType)
-		if err := updateDatabase(db, data, jurisdictionType, hash); err != nil {
+		if err := updateVoteTallies(db, data, jurisdictionType, hash); err != nil {
 			return fmt.Errorf("error updating %s data: %v", jurisdictionType, err)
 		}
 	} else {
@@ -108,8 +103,59 @@ func checkAndProcessUpdate(db *gorm.DB, url string, jurisdictionType Jurisdictio
 	return nil
 }
 
+func loadCandidates(db *gorm.DB, data interface{}, jurisdictionType JurisdictionType) error {
+	// Process the data based on jurisdiction type
+	var contests []Contest
+	var err error
+
+	switch jurisdictionType {
+	case StateJurisdiction:
+		contests, err = processStateData(data.([]*StateCSVRecord))
+	case CountyJurisdiction:
+		contests, err = processCountyData(data.([]*CountyCSVRecord))
+	default:
+		err = fmt.Errorf("unknown jurisdiction type: %s", jurisdictionType)
+	}
+
+	tx := db.Begin()
+	// Ensure rollback if panic occurs
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r) // re-throw panic after Rollback
+		}
+	}()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	fmt.Printf("Loading %v contests for %v.\n", len(contests), jurisdictionType)
+
+	totalCandidates := 0
+	// Insert contests and candidates into the database
+	for _, contest := range contests {
+		if err := tx.FirstOrCreate(&contest, contest).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error creating contest: %v", err)
+		}
+		totalCandidates += len(contest.Candidates)
+		for _, candidate := range contest.Candidates {
+			if err := tx.FirstOrCreate(&candidate, candidate).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error creating candidate: %v", err)
+			}
+		}
+	}
+
+	fmt.Printf("Total candidates: %v\n", totalCandidates)
+
+	// Commit the transaction
+	return tx.Commit().Error
+}
+
 // Function to update database
-func updateDatabase(db *gorm.DB, data interface{}, jurisdictionType JurisdictionType, hash string) error {
+func updateVoteTallies(db *gorm.DB, data interface{}, jurisdictionType JurisdictionType, hash string) error {
 	// Start a transaction
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -135,39 +181,8 @@ func updateDatabase(db *gorm.DB, data interface{}, jurisdictionType Jurisdiction
 		return err
 	}
 
-	// Process the data based on jurisdiction type
-	var contests []Contest
-	var err error
+	_ = data
 
-	switch jurisdictionType {
-	case StateJurisdiction:
-		contests, err = processStateData(data.([]*StateCSVRecord))
-	case CountyJurisdiction:
-		contests, err = processCountyData(data.([]*CountyCSVRecord))
-	default:
-		err = fmt.Errorf("unknown jurisdiction type: %s", jurisdictionType)
-	}
-
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// Insert contests and candidates into the database
-	for _, contest := range contests {
-		if err := tx.FirstOrCreate(&contest, contest).Error; err != nil {
-			tx.Rollback()
-			return fmt.Errorf("error creating contest: %v", err)
-		}
-		for _, candidate := range contest.Candidates {
-			if err := tx.FirstOrCreate(&candidate, candidate).Error; err != nil {
-				tx.Rollback()
-				return fmt.Errorf("error creating candidate: %v", err)
-			}
-		}
-	}
-
-	// Commit the transaction
 	return tx.Commit().Error
 }
 

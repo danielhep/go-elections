@@ -8,7 +8,6 @@
     gotools
     go-tools
     delve
-    redis
   ] ++ lib.optionals pkgs.stdenv.isDarwin [
     pkgs.darwin.apple_sdk.frameworks.CoreFoundation
     pkgs.darwin.apple_sdk.frameworks.Security

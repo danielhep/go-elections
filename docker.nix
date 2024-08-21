@@ -9,7 +9,6 @@ let
     version = "0.1.0";
     src = ./.;
     vendorHash = null;
-    # Use the Go version from the devShell
     buildInputs = [ pkgs.go_1_23 ];
   };
 in
@@ -22,7 +21,10 @@ pkgs.dockerTools.buildImage {
     paths = [
       app
       pkgs.cacert # Necessary for HTTPS requests
-    ] ++ devShell.config.packages;
+      gopls
+      gotools
+      go-tools
+    ];
     pathsToLink = [ "/bin" "/etc" ];
   };
 

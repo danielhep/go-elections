@@ -7,6 +7,7 @@ let
     version = "0.1.0";
     src = ./.;
     vendorHash = null;
+    subPackages = [ "cmd/election-scraper" ];
   };
 in
 pkgs.dockerTools.buildImage {

@@ -7,6 +7,7 @@ let
     version = "0.1.0";
     src = ./.;
     vendorHash = "sha256-RrAecmrGKxzJAE/r/Mt+nE+9ve9H9Msz3wWeAD3w1Lk=";
+    # vendorHash = pkgs.lib.fakeHash;
     subPackages = [ "cmd/election-scraper" ];
   };
 in

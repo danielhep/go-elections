@@ -3,7 +3,6 @@
 let
   system = "x86_64-linux"; # Adjust this if you're targeting a different system
   pkgs = self.inputs.nixpkgs.legacyPackages.${system};
-  devShell = self.devShells.${system}.default;
 
   app = pkgs.buildGoModule {
     pname = "elections";

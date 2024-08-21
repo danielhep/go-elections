@@ -18,6 +18,7 @@
     {
       packages = forEachSystem (system: {
         devenv-up = self.devShells.${system}.default.config.procfileScript;
+        docker = pkgs.callPackage ./docker.nix { inherit self; };
       });
 
       devShells = forEachSystem

@@ -21,9 +21,9 @@ pkgs.dockerTools.buildImage {
     paths = [
       app
       pkgs.cacert # Necessary for HTTPS requests
-      gopls
-      gotools
-      go-tools
+      pkgs.gopls
+      pkgs.gotools
+      pkgs.go-tools
     ];
     pathsToLink = [ "/bin" "/etc" ];
   };

@@ -3,9 +3,9 @@
 let
   system = "x86_64-linux"; # Adjust this if you're targeting a different system
   app = pkgs.buildGoModule {
-    pname = "elections";
+    pname = "election-scraper";
     version = "0.1.0";
-    src = ./.;
+    src = ./cmd/election-scraper;
     vendorHash = null;
   };
 in

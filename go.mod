@@ -1,4 +1,4 @@
-module danielhep/elections
+module github.com/danielhep/go-elections
 
 go 1.23
 

@@ -32,7 +32,7 @@
         pkgs = pkgsForSystem system;
       in {
         devenv-up = self.devShells.${system}.default.config.procfileScript;
-        docker = pkgs.callPackage ./docker.nix { pkgs };
+        docker = pkgs.callPackage ./docker.nix { };
       });
 
       devShells = forEachSystem

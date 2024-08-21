@@ -1,4 +1,4 @@
-{ self ? (builtins.getFlake (toString ./.)) }:
+{ pkgs }:
 
 let
   system = "x86_64-linux"; # Adjust this if you're targeting a different system

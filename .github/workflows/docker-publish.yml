@@ -44,6 +44,7 @@ jobs:
 
       - name: Build Docker image with Nix
         run: |
+          go mod vendor
           nix build .#docker
           docker load < result
 

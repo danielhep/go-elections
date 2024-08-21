@@ -24,7 +24,7 @@ pkgs.dockerTools.buildImage {
   };
 
   config = {
-    Cmd = [ "${app}/bin/go-elections" ];
+    Cmd = [ "election-scraper" ];
     ExposedPorts = {
       "8080/tcp" = {};
     };

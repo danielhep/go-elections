@@ -19,6 +19,8 @@ pkgs.dockerTools.buildImage {
     name = "image-root";
     paths = [
       app
+      pkgs.cacert  # Add SSL certificates
+      pkgs.tzdata  # Add timezone data
     ];
     pathsToLink = [ "/bin" "/etc" ];
   };

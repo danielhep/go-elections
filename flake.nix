@@ -16,7 +16,10 @@
       forEachSystem = nixpkgs.lib.genAttrs (import systems);
     in
     {
-      packages = forEachSystem (system: {
+      packages = forEachSystem (system: 
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in {
         devenv-up = self.devShells.${system}.default.config.procfileScript;
         docker = pkgs.callPackage ./docker.nix { inherit self; };
       });

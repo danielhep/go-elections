@@ -10,7 +10,7 @@ let
     src = ./.;
     vendorHash = null;
     # Use the Go version from the devShell
-    buildInputs = [ devShell.config.languages.go.package ];
+    buildInputs = [ pkgs.go_1_23 ];
   };
 in
 pkgs.dockerTools.buildImage {

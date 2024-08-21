@@ -6,7 +6,7 @@ let
     pname = "election-scraper";
     version = "0.1.0";
     src = ./.;
-    vendorHash = null;
+    vendorHash = "sha256-RrAecmrGKxzJAE/r/Mt+nE+9ve9H9Msz3wWeAD3w1Lk=";
     subPackages = [ "cmd/election-scraper" ];
   };
 in

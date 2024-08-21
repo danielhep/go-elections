@@ -9,7 +9,7 @@ let
     version = "0.1.0";
     src = ./.;
     vendorHash = null;
-    nativeBuildInputs = [ pkgs.go_1_23 pkgs.git pkgs.cacert ];
+    args.nativeBuildInputs = [ pkgs.go_1_23 pkgs.git pkgs.cacert ];
   };
 in
 pkgs.dockerTools.buildImage {

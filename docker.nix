@@ -5,7 +5,7 @@ let
   app = pkgs.buildGoModule {
     pname = "election-scraper";
     version = "0.1.0";
-    src = ./cmd/election-scraper;
+    src = ./.;
     vendorHash = null;
   };
 in

@@ -14,11 +14,22 @@
   outputs = { self, nixpkgs, devenv, systems, ... } @ inputs:
     let
       forEachSystem = nixpkgs.lib.genAttrs (import systems);
+      overlay = final: prev: {
+        go = prev.go_1_23;
+        buildGoModule = prev.buildGoModule.override {
+          go = final.go;
+        };
+      };
+      pkgsForSystem = system: import nixpkgs {
+        inherit system;
+        overlays = [ overlay ];
+      };
     in
     {
+      overlays.default = overlay;
       packages = forEachSystem (system: 
       let
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = pkgsForSystem system;
       in {
         devenv-up = self.devShells.${system}.default.config.procfileScript;
         docker = pkgs.callPackage ./docker.nix { inherit self; };
@@ -27,7 +38,7 @@
       devShells = forEachSystem
         (system:
           let
-            pkgs = nixpkgs.legacyPackages.${system};
+            pkgs = pkgsForSystem system;
           in
           {
             default = devenv.lib.mkShell {

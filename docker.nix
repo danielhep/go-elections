@@ -9,7 +9,6 @@ let
     version = "0.1.0";
     src = ./.;
     vendorHash = null;
-    go = pkgs.go_1_23;
   };
 in
 pkgs.dockerTools.buildImage {

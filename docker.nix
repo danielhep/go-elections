@@ -9,7 +9,7 @@ let
     version = "0.1.0";
     src = ./.;
     vendorHash = null;
-    buildInputs = [ pkgs.go_1_23 ];
+    nativeBuildInputs = [ pkgs.go_1_23, pkgs.git, pkgs.cacert ];
   };
 in
 pkgs.dockerTools.buildImage {
@@ -20,7 +20,6 @@ pkgs.dockerTools.buildImage {
     name = "image-root";
     paths = [
       app
-      pkgs.cacert # Necessary for HTTPS requests
       pkgs.gopls
       pkgs.gotools
       pkgs.go-tools

@@ -27,7 +27,7 @@
     in
     {
       overlays.default = overlay;
-      packages = forEachSystem (system: 
+      packages = forEachSystem (system:
       let
         pkgs = pkgsForSystem system;
       in {

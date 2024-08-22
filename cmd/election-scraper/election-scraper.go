@@ -6,56 +6,56 @@ import (
 	"os"
 	"time"
 
-	"github.com/danielhep/go-elections/internal/csv_handler"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/danielhep/go-elections/internal/csv"
+	"github.com/danielhep/go-elections/internal/database"
+	"github.com/danielhep/go-elections/internal/types"
 )
 
-func initalLoad(db *gorm.DB) error {
+func initalLoad(db *database.DB) error {
 	stateURL := os.Getenv("STATE_DATA")
 	countyURL := os.Getenv("COUNTY_DATA")
-	data, hash, err := csv_handler.ScrapeAndParse(stateURL, csv_handler.StateJurisdiction)
+	data, hash, err := csv.ParseFromURL(stateURL, types.StateJurisdiction)
 	if err != nil {
-		return fmt.Errorf("error scraping %s data: %v", csv_handler.StateJurisdiction, err)
+		return fmt.Errorf("error scraping %s data: %v", types.StateJurisdiction, err)
 	}
-	if err := csv_handler.LoadCandidates(db, data); err != nil {
+	if err := db.LoadCandidates(data); err != nil {
 		return err
 	}
-	if err := csv_handler.CheckAndProcessUpdate(db, data, hash, csv_handler.StateJurisdiction); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, types.StateJurisdiction); err != nil {
 		return err
 	}
 
-	data, hash, err = csv_handler.ScrapeAndParse(countyURL, csv_handler.CountyJurisdiction)
+	data, hash, err = csv.ParseFromURL(countyURL, types.CountyJurisdiction)
 	if err != nil {
-		return fmt.Errorf("error scraping %s data: %v", csv_handler.CountyJurisdiction, err)
+		return fmt.Errorf("error scraping %s data: %v", types.CountyJurisdiction, err)
 	}
-	if err := csv_handler.LoadCandidates(db, data); err != nil {
+	if err := db.LoadCandidates(data); err != nil {
 		return err
 	}
-	if err := csv_handler.CheckAndProcessUpdate(db, data, hash, csv_handler.CountyJurisdiction); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, types.CountyJurisdiction); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Function to check for updates
-func checkForUpdates(db *gorm.DB) error {
+func checkForUpdates(db *database.DB) error {
 	stateURL := os.Getenv("STATE_DATA")
 	countyURL := os.Getenv("COUNTY_DATA")
 
-	data, hash, err := csv_handler.ScrapeAndParse(stateURL, csv_handler.StateJurisdiction)
+	data, hash, err := csv.ParseFromURL(stateURL, types.StateJurisdiction)
 	if err != nil {
-		return fmt.Errorf("error scraping %s data: %v", csv_handler.StateJurisdiction, err)
+		return fmt.Errorf("error scraping %s data: %v", types.StateJurisdiction, err)
 	}
-	if err := csv_handler.CheckAndProcessUpdate(db, data, hash, csv_handler.StateJurisdiction); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, types.StateJurisdiction); err != nil {
 		return err
 	}
 
-	data, hash, err = csv_handler.ScrapeAndParse(countyURL, csv_handler.CountyJurisdiction)
+	data, hash, err = csv.ParseFromURL(countyURL, types.CountyJurisdiction)
 	if err != nil {
-		return fmt.Errorf("error scraping %s data: %v", csv_handler.CountyJurisdiction, err)
+		return fmt.Errorf("error scraping %s data: %v", types.CountyJurisdiction, err)
 	}
-	if err := csv_handler.CheckAndProcessUpdate(db, data, hash, csv_handler.CountyJurisdiction); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, types.CountyJurisdiction); err != nil {
 		return err
 	}
 
@@ -63,7 +63,6 @@ func checkForUpdates(db *gorm.DB) error {
 }
 
 func main() {
-	// Get the connection string from the environment variable
 	fmt.Println("Election data")
 	pgURL := os.Getenv("PG_URL")
 	if pgURL == "" {
@@ -71,17 +70,16 @@ func main() {
 	}
 
 	// Connect to the database
-	db, err := gorm.Open(postgres.Open(pgURL), &gorm.Config{})
+	db, err := database.NewDB(pgURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
 	// AutoMigrate the schema
-	err = db.AutoMigrate(&csv_handler.Contest{}, &csv_handler.Candidate{}, &csv_handler.Update{}, &csv_handler.VoteTally{})
+	err = db.MigrateSchema()
 	if err != nil {
 		log.Fatalf("Failed to migrate database schema: %v", err)
 	}
-	fmt.Println("Schema migrated successfully")
 
 	// Set up a ticker to periodically check for updates
 	updateInterval := time.Second

@@ -1,0 +1,26 @@
+package main
+
+import (
+	"fmt"
+	"github.com/danielhep/go-elections/internal/types"
+)
+
+templ mainPage(contests []types.Contest) {
+	@layout("Election Results") {
+		<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+			<div class="px-4 py-5 sm:px-6">
+				<h2 class="text-lg leading-6 font-medium text-gray-900">Contests by Ballot Title</h2>
+			</div>
+			<div class="border-t border-gray-200">
+				<dl>
+					for i, contest := range contests {
+						<a href={ templ.URL(fmt.Sprintf("/contest/%d", contest.ID)) } class={ templ.KV("bg-gray-50", i%2 == 0), templ.KV("bg-white", i%2 != 0), "px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6" }>
+							<dt class="text-sm font-medium text-gray-500">{ contest.Name }</dt>
+							<dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{ contest.District }</dd>
+						</a>
+					}
+				</dl>
+			</div>
+		</div>
+	}
+}

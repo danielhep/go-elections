@@ -106,6 +106,12 @@ func runImport(c *cli.Context) error {
 				continue
 			}
 
+			// Load the candidates
+			err = db.LoadCandidates(records)
+			if err != nil {
+				log.Printf("Failed to load candidates: %v", err)
+			}
+
 			// Update vote tallies
 			err = db.UpdateVoteTallies(records, jType, hash, date)
 			if err != nil {

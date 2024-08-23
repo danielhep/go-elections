@@ -4,6 +4,7 @@
     systems.url = "github:nix-systems/default";
     devenv.url = "github:cachix/devenv";
     devenv.inputs.nixpkgs.follows = "nixpkgs";
+    templ.url = "github:a-h/templ";
   };
 
   # nixConfig = {
@@ -30,6 +31,7 @@
       packages = forEachSystem (system:
       let
         pkgs = pkgsForSystem system;
+        templ = system: inputs.templ.packages.${system}.templ;
       in {
         devenv-up = self.devShells.${system}.default.config.procfileScript;
         docker = pkgs.callPackage ./docker.nix { };

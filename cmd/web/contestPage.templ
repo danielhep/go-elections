@@ -1,0 +1,48 @@
+package main
+
+import (
+	"fmt"
+	"github.com/danielhep/go-elections/internal/types"
+)
+
+templ contestPage(contest types.Contest, voteTallies []types.VoteTally, updates []types.Update, currentTimestamp string) {
+	@layout(contest.Name + " Results") {
+		<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+			<div class="px-4 py-5 sm:px-6">
+				<h2 class="text-lg leading-6 font-medium text-gray-900">{ contest.Name } Results</h2>
+			</div>
+			<div class="border-t border-gray-200 px-4 py-5 sm:p-0">
+				<form class="sm:px-6 sm:py-5">
+					<select name="timestamp" onchange="this.form.submit()" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+						for _, update := range updates {
+							<option value={ update.Timestamp } selected?={ update.Timestamp == currentTimestamp }>
+								{ update.Timestamp }
+							</option>
+						}
+					</select>
+				</form>
+				<table class="min-w-full divide-y divide-gray-200">
+					<thead class="bg-gray-50">
+						<tr>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Candidate</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Party</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Votes</th>
+						</tr>
+					</thead>
+					<tbody class="bg-white divide-y divide-gray-200">
+						for _, tally := range voteTallies {
+							<tr>
+								<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{ tally.Candidate.Name }</td>
+								<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ *tally.Candidate.Party }</td>
+								<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ fmt.Sprintf("%d", tally.Votes) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="mt-4">
+			<a href="/" class="text-indigo-600 hover:text-indigo-900">Back to Main Page</a>
+		</div>
+	}
+}

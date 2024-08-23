@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, system, ... }:
 
 {
   # Packages to install
@@ -8,6 +8,7 @@
     gotools
     go-tools
     delve
+    templ
   ] ++ lib.optionals pkgs.stdenv.isDarwin [
     pkgs.darwin.apple_sdk.frameworks.CoreFoundation
     pkgs.darwin.apple_sdk.frameworks.Security

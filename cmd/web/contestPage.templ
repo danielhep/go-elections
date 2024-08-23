@@ -7,7 +7,7 @@ import (
 
 templ contestPage(contest types.Contest, voteTallies []types.VoteTally, updates []types.Update, currentTimestamp string) {
 	@layout(contest.Name + " Results") {
-		<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+		<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
 			<div class="px-4 py-5 sm:px-6">
 				<h2 class="text-lg leading-6 font-medium text-gray-900">{ contest.Name } Results</h2>
 			</div>
@@ -41,8 +41,89 @@ templ contestPage(contest types.Contest, voteTallies []types.VoteTally, updates 
 				</table>
 			</div>
 		</div>
+		<div
+			id="chart-data"
+			class="bg-white shadow overflow-hidden sm:rounded-lg"
+			chart-data={ templ.JSONString(getChartData(voteTallies, updates)) }
+			x-data="{data: JSON.parse(document.getElementById('chart-data').getAttribute('chart-data'))}"
+			x-init="
+				const ctx = document.getElementById('voteChart').getContext('2d');
+				console.log(data)
+    			new Chart(ctx, {
+    				type: 'line',
+    				data: data,
+    				options: {
+    					responsive: true,
+    					plugins: {
+    						legend: {
+    							position: 'top',
+    						},
+    						title: {
+    							display: true,
+    							text: 'Votes Over Time'
+    						}
+    					}
+    				}
+    			});
+            "
+		>
+			<canvas id="voteChart" width="400" height="200"></canvas>
+		</div>
 		<div class="mt-4">
 			<a href="/" class="text-indigo-600 hover:text-indigo-900">Back to Main Page</a>
 		</div>
 	}
+}
+
+type chartData struct {
+	Labels   []string `json:"labels"`
+	Datasets []struct {
+		Label           string `json:"label"`
+		Data            []int  `json:"data"`
+		BorderColor     string `json:"borderColor"`
+		BackgroundColor string `json:"backgroundColor"`
+		Fill            bool   `json:"fill"`
+	} `json:"datasets"`
+}
+
+func getChartData(voteTallies []types.VoteTally, updates []types.Update) chartData {
+	// Prepare data for the chart
+	datasets := make(map[string][]int)
+	labels := make([]string, len(updates))
+
+	for i, update := range updates {
+		labels[i] = update.Timestamp
+		for _, tally := range voteTallies {
+			if tally.UpdateID == update.ID {
+				datasets[tally.Candidate.Name] = append(datasets[tally.Candidate.Name], tally.Votes)
+			}
+		}
+	}
+
+	// Create Chart.js data structure
+	chartData := chartData{
+		Labels: labels,
+	}
+
+	colors := []string{"#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"}
+	colorIndex := 0
+
+	for candidate, votes := range datasets {
+		chartData.Datasets = append(chartData.Datasets, struct {
+			Label           string `json:"label"`
+			Data            []int  `json:"data"`
+			BorderColor     string `json:"borderColor"`
+			BackgroundColor string `json:"backgroundColor"`
+			Fill            bool   `json:"fill"`
+		}{
+			Label:           candidate,
+			Data:            votes,
+			BorderColor:     colors[colorIndex%len(colors)],
+			BackgroundColor: colors[colorIndex%len(colors)],
+			Fill:            false,
+		})
+		colorIndex++
+	}
+
+	return chartData
 }

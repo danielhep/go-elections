@@ -155,6 +155,19 @@ func contestPage(contest types.Contest, voteTallies []types.VoteTally, updates [
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(templ.JSONString(getChartData(voteTallies, updates)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 47, Col: 68}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 14)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 			return templ_7745c5c3_Err
 		})
 		templ_7745c5c3_Err = layout(contest.Name+" Results").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
@@ -163,4 +176,57 @@ func contestPage(contest types.Contest, voteTallies []types.VoteTally, updates [
 		}
 		return templ_7745c5c3_Err
 	})
+}
+
+type chartData struct {
+	Labels   []string `json:"labels"`
+	Datasets []struct {
+		Label           string `json:"label"`
+		Data            []int  `json:"data"`
+		BorderColor     string `json:"borderColor"`
+		BackgroundColor string `json:"backgroundColor"`
+		Fill            bool   `json:"fill"`
+	} `json:"datasets"`
+}
+
+func getChartData(voteTallies []types.VoteTally, updates []types.Update) chartData {
+	// Prepare data for the chart
+	datasets := make(map[string][]int)
+	labels := make([]string, len(updates))
+
+	for i, update := range updates {
+		labels[i] = update.Timestamp
+		for _, tally := range voteTallies {
+			if tally.UpdateID == update.ID {
+				datasets[tally.Candidate.Name] = append(datasets[tally.Candidate.Name], tally.Votes)
+			}
+		}
+	}
+
+	// Create Chart.js data structure
+	chartData := chartData{
+		Labels: labels,
+	}
+
+	colors := []string{"#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"}
+	colorIndex := 0
+
+	for candidate, votes := range datasets {
+		chartData.Datasets = append(chartData.Datasets, struct {
+			Label           string `json:"label"`
+			Data            []int  `json:"data"`
+			BorderColor     string `json:"borderColor"`
+			BackgroundColor string `json:"backgroundColor"`
+			Fill            bool   `json:"fill"`
+		}{
+			Label:           candidate,
+			Data:            votes,
+			BorderColor:     colors[colorIndex%len(colors)],
+			BackgroundColor: colors[colorIndex%len(colors)],
+			Fill:            false,
+		})
+		colorIndex++
+	}
+
+	return chartData
 }

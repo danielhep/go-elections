@@ -37,7 +37,7 @@ templ groupContests(groupedContests map[string][]types.Contest) {
 						</li>
 					}
 				</ul>
-				if len(groupedContests) > 5 {
+				if len(groupedContests[contest]) > 5 {
 					<div class="px-4 py-3 bg-gray-100 text-center">
 						<button
 							@click="expanded = !expanded"

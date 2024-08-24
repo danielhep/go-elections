@@ -39,7 +39,7 @@ func layout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</title><script src=\"https://cdn.tailwindcss.com\"></script><script defer src=\"https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js\"></script><script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script></head><body class=\"min-h-screen bg-gray-100\"><header class=\"bg-white shadow\"><div class=\"max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8\"><h1 class=\"text-3xl font-bold text-gray-900\">King County Election Data Dashboard</h1></div></header><main><div class=\"max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</title><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js\"></script><script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script></head><body class=\"min-h-screen bg-gray-100\"><header class=\"bg-white shadow\"><div class=\"max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8\"><h1 class=\"text-3xl font-bold text-gray-900\"><a href=\"/\">King County Election Data Dashboard</a></h1></div></header><main><div class=\"max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -47,7 +47,7 @@ func layout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></main></body></html>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></main><footer class=\"max-w-7xl mx-auto mb-4\">Just a little @danielhep side project, not at all associated with the great state of Washington or King County.</footer></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

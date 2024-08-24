@@ -153,7 +153,7 @@ func groupContests(groupedContests map[string][]types.Contest) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if len(groupedContests) > 5 {
+			if len(groupedContests[contest]) > 5 {
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"px-4 py-3 bg-gray-100 text-center\"><button @click=\"expanded = !expanded\" x-text=\"expanded ? &#39;Show Less&#39; : &#39;Show More&#39;\" class=\"text-sm font-medium text-blue-600 hover:text-blue-800\"></button></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

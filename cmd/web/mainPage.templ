@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/danielhep/go-elections/internal/types"
+	"maps"
+	"slices"
+	"strings"
 )
 
 templ mainPage(contests []types.Contest) {
@@ -12,21 +15,21 @@ templ mainPage(contests []types.Contest) {
 				<h2 class="text-xl font-semibold text-gray-900">Contests by Ballot Title</h2>
 			</div>
 			<div class="border-t border-gray-200">
-				@groupContests(contests)
+				@groupContests(groupContestsByBallotTitle(contests))
 			</div>
 		</div>
 	}
 }
 
-templ groupContests(contests []types.Contest) {
+templ groupContests(groupedContests map[string][]types.Contest) {
 	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-		for ballotTitle, groupedContests := range groupContestsByBallotTitle(contests) {
+		for _, contest := range getSortedContests(groupedContests) {
 			<div class="bg-gray-50 rounded-lg overflow-hidden shadow" x-data="{ expanded: false }">
 				<div class="px-4 py-3 bg-gray-100">
-					<h3 class="text-lg font-medium text-gray-900">{ ballotTitle }</h3>
+					<h3 class="text-lg font-medium text-gray-900">{ contest }</h3>
 				</div>
 				<ul class="divide-y divide-gray-200">
-					for i, contest := range groupedContests {
+					for i, contest := range groupedContests[contest] {
 						<li x-show={ fmt.Sprintf("expanded || %d < 5", i) }>
 							<a href={ templ.URL(fmt.Sprintf("/contest/%d", contest.ID)) } class="block hover:bg-gray-100 px-4 py-3 transition duration-150 ease-in-out">
 								<p class="text-sm font-medium text-gray-700">{ contest.District }</p>
@@ -53,5 +56,17 @@ func groupContestsByBallotTitle(contests []types.Contest) map[string][]types.Con
 	for _, contest := range contests {
 		grouped[contest.Name] = append(grouped[contest.Name], contest)
 	}
+
 	return grouped
+}
+
+func getSortedContests(groupedContests map[string][]types.Contest) []string {
+	contests := slices.Collect(maps.Keys(groupedContests))
+	slices.SortStableFunc(contests, func(i, j string) int {
+		return strings.Compare(i, j)
+	})
+	slices.SortStableFunc(contests, func(i, j string) int {
+		return len(groupedContests[i]) - len(groupedContests[j])
+	})
+	return contests
 }

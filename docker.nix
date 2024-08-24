@@ -6,9 +6,9 @@ let
     pname = "go-elections";
     version = "0.1.0";
     src = ./.;
-    vendorHash = "sha256-Gzaf817buKd+dDrX7zzYFokLi928HEyVCbn2SvrRKkI=";
+    vendorHash = "sha256-mQXQ+T1kNDwzxamAcTSqbdJKTFIAXGvkZOvLJ0Y+z3E=";
     # vendorHash = pkgs.lib.fakeHash;
-    subPackages = [ "cmd/election-scraper" "cmd/historical-import" ];
+    subPackages = [ "cmd/election-scraper" "cmd/historical-import" "cmd/web" ];
   };
 in
 pkgs.dockerTools.buildImage {

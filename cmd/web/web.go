@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -28,11 +27,10 @@ func main() {
 	// Main page route
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		var contests []types.Contest
-		if err := db.Model(&types.Contest{}).Find(&contests).Error; err != nil {
+		if err := db.Find(&contests).Error; err != nil {
 			http.Error(w, "Error fetching contests", http.StatusInternalServerError)
 			return
 		}
-		fmt.Printf("%#v\n", contests)
 		err = mainPage(contests).Render(r.Context(), w)
 		if err != nil {
 			http.Error(w, "Error rendering page", http.StatusInternalServerError)
@@ -43,7 +41,6 @@ func main() {
 	r.HandleFunc("/contest/{id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		contestID := vars["id"]
-		timestamp := r.URL.Query().Get("timestamp")
 
 		var contest types.Contest
 		if err := db.First(&contest, contestID).Error; err != nil {
@@ -51,27 +48,13 @@ func main() {
 			return
 		}
 
-		var update types.Update
-		if timestamp == "" {
-			// Get the most recent update
-			if err := db.Order("timestamp desc").First(&update).Error; err != nil {
-				http.Error(w, "Error fetching latest update", http.StatusInternalServerError)
-				return
-			}
-		} else {
-			// Get the update for the specified timestamp
-			if err := db.Where("timestamp = ?", timestamp).First(&update).Error; err != nil {
-				http.Error(w, "Update not found for the specified timestamp", http.StatusNotFound)
-				return
-			}
-		}
-
-		var voteTallies []types.VoteTally
-		if err := db.Where("contest_id = ? AND update_id = ?", contestID, update.ID).
-			Preload("Candidate").Find(&voteTallies).Error; err != nil {
+		var candidates []types.Candidate
+		if err := db.Where("contest_id = ?", contestID).Preload("VoteTallies").Preload("VoteTallies.Update").Find(&candidates).Error; err != nil {
 			http.Error(w, "Error fetching vote tallies", http.StatusInternalServerError)
 			return
 		}
+		// Sort candidates by their latest vote count
+		sortCandidatesByLatestVotes(candidates)
 
 		// Fetch all available timestamps for the dropdown
 		var updates []types.Update
@@ -80,7 +63,7 @@ func main() {
 			return
 		}
 
-		err = contestPage(contest, voteTallies, updates, update.Timestamp).Render(r.Context(), w)
+		err = contestPage(contest, candidates, updates).Render(r.Context(), w)
 		if err != nil {
 			http.Error(w, "Error rendering page", http.StatusInternalServerError)
 		}

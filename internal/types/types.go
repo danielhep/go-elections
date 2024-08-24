@@ -82,10 +82,11 @@ type Contest struct {
 
 type Candidate struct {
 	gorm.Model
-	Name      string
-	Party     *string
-	ContestID uint
-	Contest   Contest
+	Name        string
+	Party       *string
+	ContestID   uint
+	Contest     Contest
+	VoteTallies []VoteTally
 }
 
 type Update struct {

@@ -31,6 +31,7 @@ func normalizeString(s string) string {
 	s = strings.ReplaceAll(s, "#0", "")
 	s = strings.ReplaceAll(s, "No. ", "")
 	s = strings.ReplaceAll(s, "&quot;", "\"")
+	s = strings.ReplaceAll(s, "SUPREME COURT", "State Supreme Court")
 	words := strings.Fields(strings.ToLower(s))
 	for i, word := range words {
 		if word != "of" && word != "the" && word != "and" && word != "in" && word != "for" {

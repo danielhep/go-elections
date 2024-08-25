@@ -125,7 +125,7 @@ func runImport(c *cli.Context) error {
 			}
 
 			// Update vote tallies
-			err = db.UpdateVoteTallies(records, jType, hash, date)
+			err = db.UpdateVoteTallies(records, hash, date)
 			if err != nil {
 				log.Printf("Failed to update vote tallies for file %s: %v", file.Name(), err)
 				continue

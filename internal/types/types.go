@@ -22,6 +22,7 @@ func (rec StateCSVRecord) ToGeneric() GenericVoteRecord {
 		DistrictName:     district,
 		BallotTitle:      contestName,
 		BallotResponse:   normalizeString(rec.Candidate),
+		VotePercentage:   float32(rec.PercentageOfTotalVotes),
 		Votes:            rec.Votes,
 		PartyPreference:  extractParty(rec.Party),
 		JurisdictionType: StateJurisdiction,
@@ -51,6 +52,7 @@ func (rec CountyCSVRecord) ToGeneric() GenericVoteRecord {
 		DistrictName:     normalizeString(rec.DistrictName),
 		BallotTitle:      normalizeString(rec.BallotTitle),
 		BallotResponse:   normalizeString(rec.BallotResponse),
+		VotePercentage:   float32(rec.PercentOfVotes),
 		Votes:            rec.Votes,
 		PartyPreference:  extractParty(rec.PartyPreference),
 		JurisdictionType: CountyJurisdiction,
@@ -62,6 +64,7 @@ type GenericVoteRecord struct {
 	BallotTitle      string
 	BallotResponse   string
 	Votes            int
+	VotePercentage   float32
 	PartyPreference  string
 	JurisdictionType JurisdictionType
 }
@@ -102,11 +105,12 @@ type Update struct {
 
 type VoteTally struct {
 	gorm.Model
-	CandidateID uint
-	Candidate   Candidate
-	UpdateID    uint
-	Contest     Contest
-	ContestID   uint
-	Update      Update
-	Votes       int
+	CandidateID    uint
+	Candidate      Candidate
+	UpdateID       uint
+	Contest        Contest
+	ContestID      uint
+	Update         Update
+	Votes          int
+	VotePercentage float32
 }

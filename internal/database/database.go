@@ -151,10 +151,11 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 		}
 		// Create vote tally
 		voteTally := types.VoteTally{
-			CandidateID: candidateID,
-			UpdateID:    update.ID,
-			Votes:       record.Votes,
-			ContestID:   contest.ID,
+			CandidateID:    candidateID,
+			UpdateID:       update.ID,
+			Votes:          record.Votes,
+			VotePercentage: record.VotePercentage,
+			ContestID:      contest.ID,
 		}
 		switch jType {
 		case types.CountyJurisdiction:

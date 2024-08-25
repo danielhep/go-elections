@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/danielhep/go-elections/internal/types"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"slices"
 	"time"
 )
@@ -27,30 +29,10 @@ templ contestPage(contest types.Contest, candidates []types.Candidate, countyUpd
 						</thead>
 						<tbody class="bg-white divide-y divide-gray-200">
 							if stateUpdate != nil {
-								<tr>
-									<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex gap-2">
-										<img src="/static/stateflag.jpg" class="h-6 rounded-md"/>
-										<p class="pt-[2px]">{ formatFirstCol(*stateUpdate) }</p>
-									</td>
-									for _, candidate := range candidates {
-										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-											{ fmt.Sprintf("%d", getVotesForUpdate(candidate, stateUpdate.ID)) }
-										</td>
-									}
-								</tr>
+								@tableRow(*stateUpdate, candidates)
 							}
 							for _, update := range countyUpdates {
-								<tr>
-									<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex gap-2">
-										<img src="/static/kingcounty.jpg" class="h-6 rounded-md"/>
-										<p class="pt-[2px]">{ formatFirstCol(update) }</p>
-									</td>
-									for _, candidate := range candidates {
-										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-											{ fmt.Sprintf("%d", getVotesForUpdate(candidate, update.ID)) }
-										</td>
-									}
-								</tr>
+								@tableRow(update, candidates)
 							}
 						</tbody>
 					</table>
@@ -92,6 +74,36 @@ templ contestPage(contest types.Contest, candidates []types.Candidate, countyUpd
 	}
 }
 
+templ tableRow(update types.Update, candidates []types.Candidate) {
+	<tr class="text-right">
+		<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+			<div class="flex items-center gap-2">
+				if update.JurisdictionType == types.CountyJurisdiction {
+					<img src="/static/kingcounty.jpg" class="h-6 rounded-md" alt="This row is from King County data."/>
+				} else if update.JurisdictionType == types.StateJurisdiction {
+					<img src="/static/stateflag.jpg" class="h-6 rounded-md" alt="This row is from the WA Secretary of State."/>
+				}
+				<p class="pt-[2px]">{ formatFirstCol(update) }</p>
+			</div>
+		</td>
+		for _, candidate := range candidates {
+			<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 justify-righ">
+				@voteCountAndPercentage(getVotesForUpdate(candidate, update.ID))
+			</td>
+		}
+	</tr>
+}
+
+templ voteCountAndPercentage(votes int, percentage float32) {
+	<p>{ message.NewPrinter(language.English).Sprintf("%d\n", votes) }</p>
+	<p>{ fmt.Sprintf("%.2f%%", percentage) }</p>
+}
+
+func printFormattedNumber(number int) string {
+	p := message.NewPrinter(language.English)
+	return p.Sprintf("%d\n", number)
+}
+
 func getAllUpdatesFromCandidate(candidate types.Candidate) (ret []types.Update) {
 	for _, voteTally := range candidate.VoteTallies {
 		if voteTally.Votes > 0 {
@@ -114,13 +126,13 @@ func getCandidates(voteTallies []types.VoteTally) []types.Candidate {
 	return candidates
 }
 
-func getVotesForUpdate(candidate types.Candidate, updateID uint) int {
+func getVotesForUpdate(candidate types.Candidate, updateID uint) (int, float32) {
 	for _, tally := range candidate.VoteTallies {
 		if tally.UpdateID == updateID {
-			return tally.Votes
+			return tally.Votes, tally.VotePercentage
 		}
 	}
-	return 0
+	return 0, 0
 }
 
 func formatFirstCol(update types.Update) string {

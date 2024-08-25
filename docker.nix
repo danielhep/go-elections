@@ -6,7 +6,7 @@ let
     pname = "go-elections";
     version = "0.1.0";
     src = ./.;
-    vendorHash = "sha256-mQXQ+T1kNDwzxamAcTSqbdJKTFIAXGvkZOvLJ0Y+z3E=";
+    vendorHash = "sha256-dcl0rdP7xDKSw6/1VB17rtZUeVL4U7blcnEbg8sZbvs=";
     # vendorHash = pkgs.lib.fakeHash;
     subPackages = [ "cmd/election-scraper" "cmd/historical-import" "cmd/web" ];
   };

@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 
 	"github.com/danielhep/go-elections/internal/database"
 	"github.com/danielhep/go-elections/internal/types"
@@ -49,19 +50,25 @@ func main() {
 		}
 
 		var candidates []types.Candidate
-		if err := db.Where("contest_id = ?", contestID).Preload("VoteTallies").Preload("VoteTallies.Update").Find(&candidates).Error; err != nil {
+		if err := db.Where("contest_id = ?", contestID).
+			Preload("VoteTallies").
+			Preload("VoteTallies.Update").
+			Find(&candidates).Error; err != nil {
 			http.Error(w, "Error fetching vote tallies", http.StatusInternalServerError)
 			return
 		}
 		// Sort candidates by their latest vote count
 		sortCandidatesByLatestVotes(candidates)
 
-		// Fetch all available timestamps for the dropdown
+		// Get the updates sorted
 		var updates []types.Update
-		if err := db.Order("timestamp desc").Find(&updates).Error; err != nil {
-			http.Error(w, "Error fetching timestamps", http.StatusInternalServerError)
-			return
+		for _, voteTally := range candidates[0].VoteTallies {
+			updates = append(updates, voteTally.Update)
 		}
+		sort.Slice(updates, func(a, b int) bool {
+			// put state at the top
+			return updates[b].Timestamp.Before(updates[a].Timestamp)
+		})
 
 		err = contestPage(contest, candidates, updates).Render(r.Context(), w)
 		if err != nil {

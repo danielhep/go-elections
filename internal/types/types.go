@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -90,7 +92,7 @@ type Candidate struct {
 
 type Update struct {
 	gorm.Model
-	Timestamp        string
+	Timestamp        time.Time
 	Hash             string
 	JurisdictionType JurisdictionType
 	VoteTallies      []VoteTally

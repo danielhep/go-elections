@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/danielhep/go-elections/internal/types"
+	"slices"
 	"time"
 )
 
@@ -10,7 +11,8 @@ templ contestPage(contest types.Contest, candidates []types.Candidate, updates [
 	@layout(contest.Name + " Results") {
 		<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
 			<div class="px-4 py-5 sm:px-6">
-				<h2 class="text-lg leading-6 font-medium text-gray-900">{ contest.Name } Results</h2>
+				<h2 class="text-xl leading-6 font-medium text-gray-900">Ballot Title: { contest.Name }</h2>
+				<h3 class="text-lg leading-6 text-gray-700 mt-1">District: { contest.District }</h3>
 			</div>
 			<div class="border-t border-gray-200 px-4 py-5 sm:p-0">
 				<div class="overflow-x-auto">
@@ -26,7 +28,7 @@ templ contestPage(contest types.Contest, candidates []types.Candidate, updates [
 						<tbody class="bg-white divide-y divide-gray-200">
 							for _, update := range updates {
 								<tr>
-									<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ formatDate(update.Timestamp) }</td>
+									<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ formatFirstCol(update) }</td>
 									for _, candidate := range candidates {
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
 											{ fmt.Sprintf("%d", getVotesForUpdate(candidate, update.ID)) }
@@ -42,7 +44,7 @@ templ contestPage(contest types.Contest, candidates []types.Candidate, updates [
 		<div
 			id="chart-data"
 			class="bg-white shadow overflow-hidden sm:rounded-lg"
-			chart-data={ templ.JSONString(getChartData(candidates, updates)) }
+			chart-data={ templ.JSONString(getChartData(candidates)) }
 			x-data="{data: JSON.parse(document.getElementById('chart-data').getAttribute('chart-data'))}"
 			x-init="
 				const ctx = document.getElementById('voteChart').getContext('2d');
@@ -57,7 +59,7 @@ templ contestPage(contest types.Contest, candidates []types.Candidate, updates [
     						},
     						title: {
     							display: true,
-    							text: 'Votes Over Time'
+    							text: 'King County Votes Over Time'
     						}
     					}
     				}
@@ -70,6 +72,15 @@ templ contestPage(contest types.Contest, candidates []types.Candidate, updates [
 			<a href="/" class="text-indigo-600 hover:text-indigo-900">Back to Main Page</a>
 		</div>
 	}
+}
+
+func getAllUpdatesFromCandidate(candidate types.Candidate) (ret []types.Update) {
+	for _, voteTally := range candidate.VoteTallies {
+		if voteTally.Votes > 0 {
+			ret = append(ret, voteTally.Update)
+		}
+	}
+	return
 }
 
 func getCandidates(voteTallies []types.VoteTally) []types.Candidate {
@@ -94,12 +105,16 @@ func getVotesForUpdate(candidate types.Candidate, updateID uint) int {
 	return 0
 }
 
-func formatDate(timestamp string) string {
-	t, err := time.Parse(time.RFC3339, timestamp)
-	if err != nil {
-		return timestamp
+func formatFirstCol(update types.Update) string {
+	if update.JurisdictionType == types.CountyJurisdiction {
+		return formatDate(update.Timestamp)
+	} else {
+		return "State (final tally)"
 	}
-	return t.Format("Jan 02, 2006")
+}
+
+func formatDate(timestamp time.Time) string {
+	return timestamp.Format("Jan 02, 2006")
 }
 
 type chartData struct {
@@ -113,17 +128,24 @@ type chartData struct {
 	} `json:"datasets"`
 }
 
-func getChartData(candidates []types.Candidate, updates []types.Update) chartData {
+func getChartData(candidates []types.Candidate) chartData {
 	// Prepare data for the chart
 	datasets := make(map[string][]int)
-	labels := make([]string, len(updates))
+	var labels []string
 
-	for _, candidate := range candidates {
-		for i, voteTally := range candidate.VoteTallies {
-			labels[i] = voteTally.Update.Timestamp
+	for i, candidate := range candidates {
+		for _, voteTally := range candidate.VoteTallies {
+			if voteTally.Update.JurisdictionType == types.StateJurisdiction {
+				continue
+			}
+			if i == 0 {
+				labels = append(labels, formatDate(voteTally.Update.Timestamp))
+			}
 			datasets[candidate.Name] = append(datasets[candidate.Name], voteTally.Votes)
 		}
 	}
+
+	labels = slices.Clip(labels)
 
 	// Create Chart.js data structure
 	chartData := chartData{

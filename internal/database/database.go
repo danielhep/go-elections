@@ -101,7 +101,7 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 
 	// Create a new Update record
 	update := &types.Update{
-		Timestamp:        timestamp.Format(time.RFC3339),
+		Timestamp:        timestamp,
 		Hash:             hash,
 		JurisdictionType: jType,
 	}

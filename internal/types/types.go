@@ -17,8 +17,8 @@ type StateCSVRecord struct {
 func (rec StateCSVRecord) ToGeneric() GenericVoteRecord {
 	contestName, district := extractContestInfo(rec.Race)
 	return GenericVoteRecord{
-		DistrictName:     normalizeString(district),
-		BallotTitle:      normalizeString(contestName),
+		DistrictName:     district,
+		BallotTitle:      contestName,
 		BallotResponse:   normalizeString(rec.Candidate),
 		Votes:            rec.Votes,
 		PartyPreference:  extractParty(rec.Party),
@@ -71,13 +71,12 @@ const (
 	CountyJurisdiction JurisdictionType = "County"
 )
 
-// Structs to represent the data
+// Structs to represent the data in DB
 type Contest struct {
 	gorm.Model
-	Name             string
-	District         string
-	JurisdictionType JurisdictionType
-	Candidates       []Candidate
+	Name       string
+	District   string
+	Candidates []Candidate
 }
 
 type Candidate struct {

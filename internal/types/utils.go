@@ -15,12 +15,22 @@ func extractContestInfo(raceField string) (contestName string, district string) 
 		contestName = normalizeString(parts[1])
 	} else {
 		contestName = normalizeString(raceField)
+		if strings.Contains(contestName, "United States") {
+			district = "Federal"
+		} else {
+			district = "State of Washington"
+		}
 	}
 	return
 }
 
 // Helper function to normalize string capitalization
 func normalizeString(s string) string {
+	s = strings.ReplaceAll(s, "Lt.", "Lieutenant")
+	s = strings.ReplaceAll(s, "U.S.", "United States")
+	s = strings.ReplaceAll(s, "#0", "")
+	s = strings.ReplaceAll(s, "No. ", "")
+	s = strings.ReplaceAll(s, "&quot;", "\"")
 	words := strings.Fields(strings.ToLower(s))
 	for i, word := range words {
 		if word != "of" && word != "the" && word != "and" && word != "in" && word != "for" {

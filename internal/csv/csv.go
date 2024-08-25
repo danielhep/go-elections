@@ -109,7 +109,7 @@ func LoadCandidates(db *gorm.DB, data []types.GenericVoteRecord) error {
 		for _, candidate := range contest.Candidates {
 			if err := tx.FirstOrCreate(&candidate, candidate).Error; err != nil {
 				tx.Rollback()
-				return fmt.Errorf("error creating candidate: %v", err)
+				return fmt.Errorf("error creating candidate: %v \n under contest %+v", err, contest)
 			}
 		}
 	}
@@ -162,7 +162,7 @@ func UpdateVoteTallies(db *gorm.DB, data []types.GenericVoteRecord, jurisdiction
 	// Create maps for quick lookups
 	contestMap := make(map[string]uint)
 	for _, c := range contests {
-		key := fmt.Sprintf("%s-%s-%s", c.Name, c.District, c.JurisdictionType)
+		key := getContestKey(c.Name, c.District)
 		contestMap[key] = c.ID
 	}
 
@@ -174,7 +174,7 @@ func UpdateVoteTallies(db *gorm.DB, data []types.GenericVoteRecord, jurisdiction
 	// Process vote tallies
 	var voteTallies []types.VoteTally
 	for _, record := range data {
-		contestKey := fmt.Sprintf("%s-%s-%s", record.BallotTitle, record.DistrictName, record.JurisdictionType)
+		contestKey := getContestKey(record.BallotTitle, record.DistrictName)
 		contestID, contestExists := contestMap[contestKey]
 		if !contestExists {
 			tx.Rollback()
@@ -217,10 +217,9 @@ func processContests(records []types.GenericVoteRecord) ([]types.Contest, error)
 		contest, exists := contestMap[contestKey]
 		if !exists {
 			contest = &types.Contest{
-				Name:             record.BallotTitle,
-				District:         record.DistrictName,
-				JurisdictionType: record.JurisdictionType,
-				Candidates:       []types.Candidate{},
+				Name:       record.BallotTitle,
+				District:   record.DistrictName,
+				Candidates: []types.Candidate{},
 			}
 			contestMap[contestKey] = contest
 		}
@@ -239,4 +238,8 @@ func processContests(records []types.GenericVoteRecord) ([]types.Contest, error)
 	}
 
 	return contests, nil
+}
+
+func getContestKey(ballotTitle string, districtName string) string {
+	return fmt.Sprintf("%s-%s", ballotTitle, districtName)
 }

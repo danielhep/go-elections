@@ -26,15 +26,21 @@ func main() {
 				Required: true,
 			},
 			&cli.StringFlag{
-				Name:    "db",
-				Usage:   "PostgreSQL database URL",
-				EnvVars: []string{"PG_URL"},
+				Name:     "db",
+				Usage:    "PostgreSQL database URL",
+				EnvVars:  []string{"PG_URL"},
+				Required: true,
 			},
 			&cli.StringFlag{
 				Name:     "type",
 				Aliases:  []string{"t"},
 				Usage:    "Jurisdiction type (state or county)",
 				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     "date",
+				Usage:    "Date",
+				Required: false,
 			},
 		},
 		Action: runImport,
@@ -50,6 +56,7 @@ func runImport(c *cli.Context) error {
 	dirPath := c.String("dir")
 	dbURL := c.String("db")
 	jurisdictionType := c.String("type")
+	date := c.String("date")
 
 	// Parse jurisdiction type
 	var jType types.JurisdictionType
@@ -84,9 +91,13 @@ func runImport(c *cli.Context) error {
 			fmt.Printf("Processing file: %s\n", file.Name())
 
 			// Extract date from filename
-			datePart := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-			datePart = strings.TrimPrefix(datePart, "webresults-")
+			datePart := date
+			if datePart == "" {
+				datePart = strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+				datePart = strings.TrimPrefix(datePart, "webresults-")
+			}
 			date, err := time.Parse("20060102", datePart)
+
 			if err != nil {
 				log.Printf("Failed to parse date from filename %s: %v", file.Name(), err)
 				continue
@@ -110,6 +121,7 @@ func runImport(c *cli.Context) error {
 			err = db.LoadCandidates(records)
 			if err != nil {
 				log.Printf("Failed to load candidates: %v", err)
+				continue
 			}
 
 			// Update vote tallies

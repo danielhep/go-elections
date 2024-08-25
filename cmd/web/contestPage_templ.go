@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func contestPage(contest types.Contest, candidates []types.Candidate, updates []types.Update) templ.Component {
+func contestPage(contest types.Contest, candidates []types.Candidate, countyUpdates []types.Update, stateUpdate *types.Update) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
@@ -98,15 +98,15 @@ func contestPage(contest types.Contest, candidates []types.Candidate, updates []
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			for _, update := range updates {
+			if stateUpdate != nil {
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(formatFirstCol(update))
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(formatFirstCol(*stateUpdate))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 31, Col: 95}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 31, Col: 101}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -122,9 +122,9 @@ func contestPage(contest types.Contest, candidates []types.Candidate, updates []
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var7 string
-					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", getVotesForUpdate(candidate, update.ID)))
+					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", getVotesForUpdate(candidate, stateUpdate.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 34, Col: 71}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 34, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -140,20 +140,72 @@ func contestPage(contest types.Contest, candidates []types.Candidate, updates []
 					return templ_7745c5c3_Err
 				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</tbody></table></div></div></div><div id=\"chart-data\" class=\"bg-white shadow overflow-hidden sm:rounded-lg\" chart-data=\"")
+			for _, update := range countyUpdates {
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var8 string
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(formatFirstCol(update))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 41, Col: 95}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</td>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				for _, candidate := range candidates {
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-500\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var9 string
+					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", getVotesForUpdate(candidate, update.ID)))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 44, Col: 71}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</td>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</tr>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</tbody></table></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(templ.JSONString(getChartData(candidates)))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 47, Col: 58}
+			if len(countyUpdates) > 0 {
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"chart-data\" class=\"bg-white shadow overflow-hidden sm:rounded-lg\" chart-data=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var10 string
+				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(templ.JSONString(getChartData(candidates)))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 58, Col: 59}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" x-data=\"{data: JSON.parse(document.getElementById(&#39;chart-data&#39;).getAttribute(&#39;chart-data&#39;))}\" x-init=\"\n\t\t\t\tconst ctx = document.getElementById(&#39;voteChart&#39;).getContext(&#39;2d&#39;);\n    \t\t\tnew Chart(ctx, {\n    \t\t\t\ttype: &#39;line&#39;,\n    \t\t\t\tdata: data,\n    \t\t\t\toptions: {\n    \t\t\t\t\tresponsive: true,\n    \t\t\t\t\tplugins: {\n    \t\t\t\t\t\tlegend: {\n    \t\t\t\t\t\t\tposition: &#39;top&#39;,\n    \t\t\t\t\t\t},\n    \t\t\t\t\t\ttitle: {\n    \t\t\t\t\t\t\tdisplay: true,\n    \t\t\t\t\t\t\ttext: &#39;King County Votes Over Time&#39;\n    \t\t\t\t\t\t}\n    \t\t\t\t\t}\n    \t\t\t\t}\n    \t\t\t});\n            \"><canvas id=\"voteChart\" width=\"400\" height=\"200\"></canvas></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" x-data=\"{data: JSON.parse(document.getElementById(&#39;chart-data&#39;).getAttribute(&#39;chart-data&#39;))}\" x-init=\"\n\t\t\t\tconst ctx = document.getElementById(&#39;voteChart&#39;).getContext(&#39;2d&#39;);\n    \t\t\tnew Chart(ctx, {\n    \t\t\t\ttype: &#39;line&#39;,\n    \t\t\t\tdata: data,\n    \t\t\t\toptions: {\n    \t\t\t\t\tresponsive: true,\n    \t\t\t\t\tplugins: {\n    \t\t\t\t\t\tlegend: {\n    \t\t\t\t\t\t\tposition: &#39;top&#39;,\n    \t\t\t\t\t\t},\n    \t\t\t\t\t\ttitle: {\n    \t\t\t\t\t\t\tdisplay: true,\n    \t\t\t\t\t\t\ttext: &#39;King County Votes Over Time&#39;\n    \t\t\t\t\t\t}\n    \t\t\t\t\t}\n    \t\t\t\t}\n    \t\t\t});\n            \"><canvas id=\"voteChart\" width=\"400\" height=\"200\"></canvas></div><div class=\"mt-4\"><a href=\"/\" class=\"text-indigo-600 hover:text-indigo-900\">Back to Main Page</a></div>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <div class=\"mt-4\"><a href=\"/\" class=\"text-indigo-600 hover:text-indigo-900\">Back to Main Page</a></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

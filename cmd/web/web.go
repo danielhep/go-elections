@@ -60,17 +60,21 @@ func main() {
 		// Sort candidates by their latest vote count
 		sortCandidatesByLatestVotes(candidates)
 
-		// Get the updates sorted
-		var updates []types.Update
+		// Get the countyUpdates sorted
+		var countyUpdates []types.Update
+		var stateUpdate *types.Update
 		for _, voteTally := range candidates[0].VoteTallies {
-			updates = append(updates, voteTally.Update)
+			if voteTally.Update.JurisdictionType == types.StateJurisdiction {
+				stateUpdate = &voteTally.Update
+			} else {
+				countyUpdates = append(countyUpdates, voteTally.Update)
+			}
 		}
-		sort.Slice(updates, func(a, b int) bool {
-			// put state at the top
-			return updates[b].Timestamp.Before(updates[a].Timestamp)
+		sort.Slice(countyUpdates, func(a, b int) bool {
+			return countyUpdates[b].Timestamp.Before(countyUpdates[a].Timestamp)
 		})
 
-		err = contestPage(contest, candidates, updates).Render(r.Context(), w)
+		err = contestPage(contest, candidates, countyUpdates, stateUpdate).Render(r.Context(), w)
 		if err != nil {
 			http.Error(w, "Error rendering page", http.StatusInternalServerError)
 		}

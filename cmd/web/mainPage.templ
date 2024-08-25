@@ -31,8 +31,9 @@ templ groupContests(groupedContests map[string][]types.Contest) {
 				<ul class="divide-y divide-gray-200">
 					for i, contest := range groupedContests[contest] {
 						<li x-show={ fmt.Sprintf("expanded || %d < 5", i) }>
-							<a href={ templ.URL(fmt.Sprintf("/contest/%d", contest.ID)) } class="block hover:bg-gray-100 px-4 py-3 transition duration-150 ease-in-out">
+							<a href={ templ.URL(fmt.Sprintf("/contest/%d", contest.ID)) } class="block hover:bg-gray-100 px-4 py-3 transition duration-150 ease-in-out flex gap-2">
 								<p class="text-sm font-medium text-gray-700">{ contest.District }</p>
+								@flagIcons(contest)
 							</a>
 						</li>
 					}
@@ -49,6 +50,15 @@ templ groupContests(groupedContests map[string][]types.Contest) {
 			</div>
 		}
 	</div>
+}
+
+templ flagIcons(contest types.Contest) {
+	if contest.HasCounty {
+		<img src="/static/kingcounty.jpg" class="h-6 rounded-md"/>
+	}
+	if contest.HasState {
+		<img src="/static/stateflag.jpg" class="h-6 rounded-md"/>
+	}
 }
 
 func groupContestsByBallotTitle(contests []types.Contest) map[string][]types.Contest {

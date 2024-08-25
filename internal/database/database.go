@@ -123,27 +123,27 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 	}
 
 	// Create maps for quick lookups
-	contestMap := make(map[string]uint)
+	contestMap := make(map[string]types.Contest)
 	for _, c := range contests {
 		key := getContestKey(c.Name, c.District)
-		contestMap[key] = c.ID
+		contestMap[key] = c
 	}
 
 	candidateMap := make(map[string]uint)
 	for _, c := range candidates {
-		key := fmt.Sprintf("%d-%s", c.ContestID, c.Name)
+		key := getCandidateKey(c.ContestID, c.Name)
 		candidateMap[key] = c.ID
 	}
 	// Process vote tallies
 	var voteTallies []types.VoteTally
 	for _, record := range data {
 		contestKey := getContestKey(record.BallotTitle, record.DistrictName)
-		contestID, contestExists := contestMap[contestKey]
+		contest, contestExists := contestMap[contestKey]
 		if !contestExists {
 			tx.Rollback()
 			return fmt.Errorf("contest not found: %s", contestKey)
 		}
-		candidateKey := fmt.Sprintf("%d-%s", contestID, record.BallotResponse)
+		candidateKey := getCandidateKey(contest.ID, record.BallotResponse)
 		candidateID, candidateExists := candidateMap[candidateKey]
 		if !candidateExists {
 			tx.Rollback()
@@ -154,7 +154,13 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 			CandidateID: candidateID,
 			UpdateID:    update.ID,
 			Votes:       record.Votes,
-			ContestID:   contestID,
+			ContestID:   contest.ID,
+		}
+		switch jType {
+		case types.CountyJurisdiction:
+			db.Model(&contest).Update("HasCounty", true)
+		case types.StateJurisdiction:
+			db.Model(&contest).Update("HasState", true)
 		}
 		voteTallies = append(voteTallies, voteTally)
 	}
@@ -190,4 +196,7 @@ func (db *DB) CheckAndProcessUpdate(data []types.GenericVoteRecord, hash string,
 
 func getContestKey(ballotTitle string, districtName string) string {
 	return fmt.Sprintf("%s-%s", ballotTitle, districtName)
+}
+func getCandidateKey(contestID uint, ballotResponse string) string {
+	return fmt.Sprintf("%d-%s", contestID, ballotResponse)
 }

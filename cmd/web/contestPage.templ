@@ -28,7 +28,10 @@ templ contestPage(contest types.Contest, candidates []types.Candidate, countyUpd
 						<tbody class="bg-white divide-y divide-gray-200">
 							if stateUpdate != nil {
 								<tr>
-									<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ formatFirstCol(*stateUpdate) }</td>
+									<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex gap-2">
+										<img src="/static/stateflag.jpg" class="h-6 rounded-md"/>
+										<p class="pt-[2px]">{ formatFirstCol(*stateUpdate) }</p>
+									</td>
 									for _, candidate := range candidates {
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
 											{ fmt.Sprintf("%d", getVotesForUpdate(candidate, stateUpdate.ID)) }
@@ -38,7 +41,10 @@ templ contestPage(contest types.Contest, candidates []types.Candidate, countyUpd
 							}
 							for _, update := range countyUpdates {
 								<tr>
-									<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ formatFirstCol(update) }</td>
+									<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex gap-2">
+										<img src="/static/kingcounty.jpg" class="h-6 rounded-md"/>
+										<p class="pt-[2px]">{ formatFirstCol(update) }</p>
+									</td>
 									for _, candidate := range candidates {
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
 											{ fmt.Sprintf("%d", getVotesForUpdate(candidate, update.ID)) }

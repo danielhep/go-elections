@@ -99,20 +99,20 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 				return templ_7745c5c3_Err
 			}
 			if stateUpdate != nil {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900\">")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex gap-2\"><img src=\"/static/stateflag.jpg\" class=\"h-6 rounded-md\"><p class=\"pt-[2px]\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(formatFirstCol(*stateUpdate))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 31, Col: 101}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 33, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</td>")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</p></td>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -124,7 +124,7 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", getVotesForUpdate(candidate, stateUpdate.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 34, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 37, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -141,20 +141,20 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 				}
 			}
 			for _, update := range countyUpdates {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900\">")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex gap-2\"><img src=\"/static/kingcounty.jpg\" class=\"h-6 rounded-md\"><p class=\"pt-[2px]\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(formatFirstCol(update))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 41, Col: 95}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 46, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</td>")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</p></td>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -166,7 +166,7 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", getVotesForUpdate(candidate, update.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 44, Col: 71}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 50, Col: 71}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -194,7 +194,7 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(templ.JSONString(getChartData(candidates)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 58, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 64, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {

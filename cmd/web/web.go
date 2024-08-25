@@ -1,6 +1,8 @@
 package main
 
 import (
+	"embed"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +12,9 @@ import (
 	"github.com/danielhep/go-elections/internal/types"
 	"github.com/gorilla/mux"
 )
+
+//go:embed images
+var staticFiles embed.FS
 
 func main() {
 	pgURL := os.Getenv("PG_URL")
@@ -32,6 +37,7 @@ func main() {
 			http.Error(w, "Error fetching contests", http.StatusInternalServerError)
 			return
 		}
+		log.Printf("%+v", contests[0])
 		err = mainPage(contests).Render(r.Context(), w)
 		if err != nil {
 			http.Error(w, "Error rendering page", http.StatusInternalServerError)
@@ -79,6 +85,12 @@ func main() {
 			http.Error(w, "Error rendering page", http.StatusInternalServerError)
 		}
 	}).Methods("GET")
+
+	staticFS, err := fs.Sub(staticFiles, "images")
+	if err != nil {
+		log.Fatal(err)
+	}
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 
 	// Start the server
 	log.Println("Starting server on :8080")

@@ -78,6 +78,8 @@ type Contest struct {
 	gorm.Model
 	Name       string
 	District   string
+	HasState   bool
+	HasCounty  bool
 	Candidates []Candidate
 }
 

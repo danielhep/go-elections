@@ -37,7 +37,6 @@ func main() {
 			http.Error(w, "Error fetching contests", http.StatusInternalServerError)
 			return
 		}
-		log.Printf("%+v", contests[0])
 		err = mainPage(contests).Render(r.Context(), w)
 		if err != nil {
 			http.Error(w, "Error rendering page", http.StatusInternalServerError)

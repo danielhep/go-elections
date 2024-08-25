@@ -78,14 +78,14 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 				return templ_7745c5c3_Err
 			}
 			for _, candidate := range candidates {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(candidate.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 26, Col: 116}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 26, Col: 127}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {

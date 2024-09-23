@@ -127,10 +127,10 @@ func runImport(c *cli.Context) error {
 				continue
 			}
 
-			// Load the candidates
-			err = db.LoadCandidates(records, election)
+			// Load the responses
+			err = db.LoadBallotResponses(records, election)
 			if err != nil {
-				log.Printf("Failed to load candidates: %v", err)
+				log.Printf("Failed to load ballot responses: %v", err)
 				continue
 			}
 

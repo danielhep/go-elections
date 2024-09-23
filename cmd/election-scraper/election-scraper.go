@@ -22,7 +22,7 @@ func initalLoad(db *database.DB) error {
 	if err != nil {
 		return fmt.Errorf("error scraping %s data: %v", types.StateJurisdiction, err)
 	}
-	if err := db.LoadCandidates(data, *election); err != nil {
+	if err := db.LoadBallotResponses(data, *election); err != nil {
 		return err
 	}
 	if err := db.CheckAndProcessUpdate(data, hash, types.StateJurisdiction, *election); err != nil {
@@ -33,7 +33,7 @@ func initalLoad(db *database.DB) error {
 	if err != nil {
 		return fmt.Errorf("error scraping %s data: %v", types.CountyJurisdiction, err)
 	}
-	if err := db.LoadCandidates(data, *election); err != nil {
+	if err := db.LoadBallotResponses(data, *election); err != nil {
 		return err
 	}
 	if err := db.CheckAndProcessUpdate(data, hash, types.CountyJurisdiction, *election); err != nil {

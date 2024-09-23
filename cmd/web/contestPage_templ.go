@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-func contestPage(contest types.Contest, candidates []types.Candidate, countyUpdates []types.Update, stateUpdate *types.Update) templ.Component {
+func contestPage(contest types.Contest, ballotResponses []types.BallotResponse, countyUpdates []types.Update, stateUpdate *types.Update) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
@@ -52,9 +52,9 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(contest.Name)
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(contest.BallotTitle)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 16, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 16, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -77,15 +77,15 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			for _, candidate := range candidates {
+			for _, response := range ballotResponses {
 				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(candidate.Name)
+				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(response.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 26, Col: 127}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 26, Col: 126}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -101,13 +101,13 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 				return templ_7745c5c3_Err
 			}
 			if stateUpdate != nil {
-				templ_7745c5c3_Err = tableRow(*stateUpdate, candidates).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = tableRow(*stateUpdate, ballotResponses).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 			for _, update := range countyUpdates {
-				templ_7745c5c3_Err = tableRow(update, candidates).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = tableRow(update, ballotResponses).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -122,9 +122,9 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(templ.JSONString(getChartData(candidates)))
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(templ.JSONString(getChartData(ballotResponses)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 46, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/contestPage.templ`, Line: 46, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -141,7 +141,7 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 			}
 			return templ_7745c5c3_Err
 		})
-		templ_7745c5c3_Err = layout(contest.Name+" Results").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layout(contest.BallotTitle+" Results").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -149,7 +149,7 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 	})
 }
 
-func tableRow(update types.Update, candidates []types.Candidate) templ.Component {
+func tableRow(update types.Update, ballotResponses []types.BallotResponse) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
@@ -199,7 +199,7 @@ func tableRow(update types.Update, candidates []types.Candidate) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, candidate := range candidates {
+		for _, candidate := range ballotResponses {
 			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 16)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -278,7 +278,7 @@ func printFormattedNumber(number int) string {
 	return p.Sprintf("%d\n", number)
 }
 
-func getAllUpdatesFromCandidate(candidate types.Candidate) (ret []types.Update) {
+func getAllUpdatesFromCandidate(candidate types.BallotResponse) (ret []types.Update) {
 	for _, voteTally := range candidate.VoteTallies {
 		if voteTally.Votes > 0 {
 			ret = append(ret, voteTally.Update)
@@ -287,20 +287,20 @@ func getAllUpdatesFromCandidate(candidate types.Candidate) (ret []types.Update) 
 	return
 }
 
-func getCandidates(voteTallies []types.VoteTally) []types.Candidate {
-	candidateMap := make(map[uint]types.Candidate)
+func getBallotResponses(voteTallies []types.VoteTally) []types.BallotResponse {
+	candidateMap := make(map[uint]types.BallotResponse)
 	for _, tally := range voteTallies {
-		candidateMap[tally.CandidateID] = tally.Candidate
+		candidateMap[tally.BallotResponseID] = tally.BallotResponse
 	}
 
-	var candidates []types.Candidate
+	var candidates []types.BallotResponse
 	for _, candidate := range candidateMap {
 		candidates = append(candidates, candidate)
 	}
 	return candidates
 }
 
-func getVotesForUpdate(candidate types.Candidate, updateID uint) (int, float32) {
+func getVotesForUpdate(candidate types.BallotResponse, updateID uint) (int, float32) {
 	for _, tally := range candidate.VoteTallies {
 		if tally.UpdateID == updateID {
 			return tally.Votes, tally.VotePercentage
@@ -332,7 +332,7 @@ type chartData struct {
 	} `json:"datasets"`
 }
 
-func getChartData(candidates []types.Candidate) chartData {
+func getChartData(candidates []types.BallotResponse) chartData {
 	// Prepare data for the chart
 	datasets := make(map[string][]int)
 	var labels []string

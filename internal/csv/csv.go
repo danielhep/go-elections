@@ -65,21 +65,21 @@ func ProcessContests(records []types.GenericVoteRecord, election types.Election)
 		contest, exists := contestMap[contestKey]
 		if !exists {
 			contest = &types.Contest{
-				Name:       record.BallotTitle,
-				District:   record.DistrictName,
-				Candidates: []types.Candidate{},
-				ElectionID: election.ID,
+				BallotTitle:     record.BallotTitle,
+				District:        record.DistrictName,
+				BallotResponses: []types.BallotResponse{},
+				ElectionID:      election.ID,
 			}
 			contestMap[contestKey] = contest
 		}
 
-		// Create Candidate and add to Contest
-		candidate := types.Candidate{
+		// Create ballot response and add to Contest
+		ballotResponse := types.BallotResponse{
 			Name:       record.BallotResponse,
 			Party:      &record.PartyPreference,
 			ElectionID: election.ID,
 		}
-		contest.Candidates = append(contest.Candidates, candidate)
+		contest.BallotResponses = append(contest.BallotResponses, ballotResponse)
 	}
 	// Convert map to slice
 	contests := make([]types.Contest, 0, len(contestMap))

@@ -11,10 +11,10 @@ import (
 templ mainPage(contests []types.Contest) {
 	@layout("Election Results") {
 		<div class="bg-white shadow overflow-hidden sm:rounded-lg">
-			<div class="px-4 py-5 sm:px-6">
+			<div class="px-4 py-5 sm:px-6 flex">
 				<h2 class="text-xl font-semibold text-gray-900">Contests by Ballot Title</h2>
 			</div>
-			<div class="border-t border-gray-200">
+			<div class="border-t border-gray-200" id="contests">
 				@groupContests(groupContestsByBallotTitle(contests))
 			</div>
 		</div>
@@ -64,7 +64,7 @@ templ flagIcons(contest types.Contest) {
 func groupContestsByBallotTitle(contests []types.Contest) map[string][]types.Contest {
 	grouped := make(map[string][]types.Contest)
 	for _, contest := range contests {
-		grouped[contest.Name] = append(grouped[contest.Name], contest)
+		grouped[contest.BallotTitle] = append(grouped[contest.BallotTitle], contest)
 	}
 
 	return grouped

@@ -217,7 +217,7 @@ func flagIcons(contest types.Contest) templ.Component {
 func groupContestsByBallotTitle(contests []types.Contest) map[string][]types.Contest {
 	grouped := make(map[string][]types.Contest)
 	for _, contest := range contests {
-		grouped[contest.Name] = append(grouped[contest.Name], contest)
+		grouped[contest.BallotTitle] = append(grouped[contest.BallotTitle], contest)
 	}
 
 	return grouped

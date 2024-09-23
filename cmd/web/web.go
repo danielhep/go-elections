@@ -54,7 +54,7 @@ func main() {
 			return
 		}
 
-		var candidates []types.Candidate
+		var candidates []types.BallotResponse
 		if err := db.Where("contest_id = ?", contestID).
 			Preload("VoteTallies").
 			Preload("VoteTallies.Update").

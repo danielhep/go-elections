@@ -27,7 +27,7 @@ func NewDB(pgURL string) (*DB, error) {
 }
 
 func (db *DB) MigrateSchema() error {
-	err := db.AutoMigrate(&types.Contest{}, &types.Candidate{}, &types.Update{}, &types.VoteTally{})
+	err := db.AutoMigrate(&types.Contest{}, &types.BallotResponse{}, &types.Update{}, &types.VoteTally{})
 	if err != nil {
 		return fmt.Errorf("failed to migrate database schema: %v", err)
 	}
@@ -35,7 +35,7 @@ func (db *DB) MigrateSchema() error {
 	return nil
 }
 
-func (db *DB) LoadCandidates(data []types.GenericVoteRecord, election types.Election) error {
+func (db *DB) LoadBallotResponses(data []types.GenericVoteRecord, election types.Election) error {
 	// Process the data based on jurisdiction type
 	var contests []types.Contest
 	var err error
@@ -64,8 +64,8 @@ func (db *DB) LoadCandidates(data []types.GenericVoteRecord, election types.Elec
 			tx.Rollback()
 			return fmt.Errorf("error creating contest: %v", err)
 		}
-		totalCandidates += len(contest.Candidates)
-		for _, candidate := range contest.Candidates {
+		totalCandidates += len(contest.BallotResponses)
+		for _, candidate := range contest.BallotResponses {
 			if err := tx.FirstOrCreate(&candidate, candidate).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("error creating candidate: %v \n under contest %+v", err, contest)
@@ -117,7 +117,7 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 
 	// Preload existing contests and candidates
 	var contests []types.Contest
-	var candidates []types.Candidate
+	var candidates []types.BallotResponse
 	if err := tx.Find(&contests).Error; err != nil {
 		tx.Rollback()
 		return err
@@ -130,7 +130,7 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 	// Create maps for quick lookups
 	contestMap := make(map[string]types.Contest)
 	for _, c := range contests {
-		key := getContestKey(c.Name, c.District)
+		key := getContestKey(c.BallotTitle, c.District)
 		contestMap[key] = c
 	}
 
@@ -149,18 +149,18 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 			return fmt.Errorf("contest not found: %s", contestKey)
 		}
 		candidateKey := getCandidateKey(contest.ID, record.BallotResponse)
-		candidateID, candidateExists := candidateMap[candidateKey]
+		ballotResponseID, candidateExists := candidateMap[candidateKey]
 		if !candidateExists {
 			tx.Rollback()
 			return fmt.Errorf("candidate not found: %s", candidateKey)
 		}
 		// Create vote tally
 		voteTally := types.VoteTally{
-			CandidateID:    candidateID,
-			UpdateID:       update.ID,
-			Votes:          record.Votes,
-			VotePercentage: record.VotePercentage,
-			ContestID:      contest.ID,
+			BallotResponseID: ballotResponseID,
+			UpdateID:         update.ID,
+			Votes:            record.Votes,
+			VotePercentage:   record.VotePercentage,
+			ContestID:        contest.ID,
 		}
 
 		if !slices.Contains(contest.Jurisdictions, string(jType)) {

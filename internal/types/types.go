@@ -88,20 +88,20 @@ type Election struct {
 	ElectionDate time.Time
 	Contests     []Contest
 	Updates      []Update
-	Candidates   []Candidate
+	Candidates   []BallotResponse
 }
 
 type Contest struct {
 	gorm.Model
-	Name          string
-	District      string
-	Jurisdictions pq.StringArray `gorm:"type:text[]"`
-	Candidates    []Candidate
-	ElectionID    uint
-	Election      Election
+	BallotTitle     string
+	District        string
+	Jurisdictions   pq.StringArray `gorm:"type:text[]"`
+	BallotResponses []BallotResponse
+	ElectionID      uint
+	Election        Election
 }
 
-type Candidate struct {
+type BallotResponse struct {
 	gorm.Model
 	Name        string
 	Party       *string
@@ -115,7 +115,7 @@ type Candidate struct {
 type Update struct {
 	gorm.Model
 	Timestamp        time.Time
-	Hash             string
+	Hash             string `gorm:"uniqueIndex"`
 	JurisdictionType JurisdictionType
 	VoteTallies      []VoteTally
 	ElectionID       uint
@@ -124,12 +124,12 @@ type Update struct {
 
 type VoteTally struct {
 	gorm.Model
-	CandidateID    uint
-	Candidate      Candidate
-	UpdateID       uint
-	Contest        Contest
-	ContestID      uint
-	Update         Update
-	Votes          int
-	VotePercentage float32
+	BallotResponseID uint
+	BallotResponse   BallotResponse
+	UpdateID         uint
+	Contest          Contest
+	ContestID        uint
+	Update           Update
+	Votes            int
+	VotePercentage   float32
 }

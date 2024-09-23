@@ -20,27 +20,22 @@ func main() {
 		Usage: "Import historical election data from CSV files",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:     "dir",
-				Aliases:  []string{"d"},
-				Usage:    "Directory path containing CSV files",
-				Required: true,
-			},
-			&cli.StringFlag{
 				Name:     "db",
 				Usage:    "PostgreSQL database URL",
 				EnvVars:  []string{"PG_URL"},
 				Required: true,
 			},
 			&cli.StringFlag{
-				Name:     "type",
-				Aliases:  []string{"t"},
-				Usage:    "Jurisdiction type (state or county)",
+				Name:     "date",
+				Usage:    "Election date (YYYY-MM-DD)",
+				Aliases:  []string{"d"},
 				Required: true,
 			},
 			&cli.StringFlag{
-				Name:     "date",
-				Usage:    "Date",
-				Required: false,
+				Name:     "name",
+				Usage:    "Name of the election (2024 Primary)",
+				Aliases:  []string{"n"},
+				Required: true,
 			},
 		},
 		Action: runImport,
@@ -53,20 +48,16 @@ func main() {
 }
 
 func runImport(c *cli.Context) error {
-	dirPath := c.String("dir")
+	dirPath := c.Args().Get(0)
+	if dirPath == "" {
+		return fmt.Errorf("directory path is required")
+	}
 	dbURL := c.String("db")
-	jurisdictionType := c.String("type")
-	date := c.String("date")
-
-	// Parse jurisdiction type
-	var jType types.JurisdictionType
-	switch strings.ToLower(jurisdictionType) {
-	case "state":
-		jType = types.StateJurisdiction
-	case "county":
-		jType = types.CountyJurisdiction
-	default:
-		return fmt.Errorf("invalid jurisdiction type: %s. Must be 'state' or 'county'", jurisdictionType)
+	electionName := c.String("name")
+	electionDateStr := c.String("date")
+	electionDate, err := time.Parse("2006-01-02", electionDateStr)
+	if err != nil {
+		return fmt.Errorf("failed to parse election date: %v", err)
 	}
 
 	// Initialize database connection
@@ -80,6 +71,13 @@ func runImport(c *cli.Context) error {
 		return fmt.Errorf("failed to migrate schema: %v", err)
 	}
 
+	// Create an election object
+	election := types.Election{
+		Name:         electionName,
+		ElectionDate: electionDate,
+	}
+	db.FirstOrCreate(&election, election)
+
 	// Process CSV files
 	files, err := os.ReadDir(dirPath)
 	if err != nil {
@@ -90,18 +88,30 @@ func runImport(c *cli.Context) error {
 		if filepath.Ext(file.Name()) == ".csv" {
 			fmt.Printf("Processing file: %s\n", file.Name())
 
-			// Extract date from filename
-			datePart := date
-			if datePart == "" {
-				datePart = strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-				datePart = strings.TrimPrefix(datePart, "webresults-")
+			// Determine jurisdiction type
+			var jType types.JurisdictionType
+			if strings.Contains(file.Name(), "allstate") {
+				jType = types.StateJurisdiction
+			} else if strings.Contains(file.Name(), "webresults") {
+				jType = types.CountyJurisdiction
+			} else {
+				return fmt.Errorf("unknown jurisdiction type from filename: %s", file.Name())
 			}
-			date, err := time.Parse("20060102", datePart)
 
+			fmt.Printf("Detected jurisdiction type: %s\n", jType)
+
+			// Extract date from filename
+			datePart := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+			datePart = strings.TrimSuffix(datePart, "_allstate")
+			datePart = strings.TrimSuffix(datePart, "-final")
+			datePart = strings.TrimPrefix(datePart, "webresults-")
+			date, err := time.Parse("20060102", datePart)
 			if err != nil {
 				log.Printf("Failed to parse date from filename %s: %v", file.Name(), err)
 				continue
 			}
+
+			fmt.Printf("Detected date: %s\n", date)
 
 			// Open and parse CSV file
 			f, err := os.Open(filepath.Join(dirPath, file.Name()))
@@ -118,14 +128,14 @@ func runImport(c *cli.Context) error {
 			}
 
 			// Load the candidates
-			err = db.LoadCandidates(records)
+			err = db.LoadCandidates(records, election)
 			if err != nil {
 				log.Printf("Failed to load candidates: %v", err)
 				continue
 			}
 
 			// Update vote tallies
-			err = db.UpdateVoteTallies(records, hash, date)
+			err = db.UpdateVoteTallies(records, hash, date, election)
 			if err != nil {
 				log.Printf("Failed to update vote tallies for file %s: %v", file.Name(), err)
 				continue

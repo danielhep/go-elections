@@ -56,7 +56,7 @@ func ParseFromURL(url string, jurisdictionType types.JurisdictionType) ([]types.
 }
 
 // Function to process state-level data
-func ProcessContests(records []types.GenericVoteRecord) ([]types.Contest, error) {
+func ProcessContests(records []types.GenericVoteRecord, election types.Election) ([]types.Contest, error) {
 	contestMap := make(map[string]*types.Contest)
 
 	for _, record := range records {
@@ -68,14 +68,16 @@ func ProcessContests(records []types.GenericVoteRecord) ([]types.Contest, error)
 				Name:       record.BallotTitle,
 				District:   record.DistrictName,
 				Candidates: []types.Candidate{},
+				ElectionID: election.ID,
 			}
 			contestMap[contestKey] = contest
 		}
 
 		// Create Candidate and add to Contest
 		candidate := types.Candidate{
-			Name:  record.BallotResponse,
-			Party: &record.PartyPreference,
+			Name:       record.BallotResponse,
+			Party:      &record.PartyPreference,
+			ElectionID: election.ID,
 		}
 		contest.Candidates = append(contest.Candidates, candidate)
 	}

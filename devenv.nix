@@ -25,6 +25,8 @@
     STATE_DATA = "https://results.vote.wa.gov/results/20240806/export/20240806_AllState.csv";
     COUNTY_DATA = "https://aqua.kingcounty.gov/elections/2024/aug-primary/webresults.csv";
     GOATCOUNTER_URL = "https://danielhep.goatcounter.com/count";
+    ELECTION_NAME = "2024 Primary Election";
+    ELECTION_DATE = "2024-08-06";
   };
 
   # Shell configuration

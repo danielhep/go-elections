@@ -53,10 +53,10 @@ templ groupContests(groupedContests map[string][]types.Contest) {
 }
 
 templ flagIcons(contest types.Contest) {
-	if contest.HasCounty {
+	if slices.Contains(contest.Jurisdictions, string(types.CountyJurisdiction)) {
 		<img src="/static/kingcounty.jpg" class="h-6 rounded-md" alt="This entry includes data from King County."/>
 	}
-	if contest.HasState {
+	if slices.Contains(contest.Jurisdictions, string(types.StateJurisdiction)) {
 		<img src="/static/stateflag.jpg" class="h-6 rounded-md" alt="This entry includes data from the Secretary of State."/>
 	}
 }

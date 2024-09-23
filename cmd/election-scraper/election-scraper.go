@@ -14,14 +14,18 @@ import (
 func initalLoad(db *database.DB) error {
 	stateURL := os.Getenv("STATE_DATA")
 	countyURL := os.Getenv("COUNTY_DATA")
+	election, err := db.GetElection()
+	if err != nil {
+		return fmt.Errorf("error getting election: %v", err)
+	}
 	data, hash, err := csv.ParseFromURL(stateURL, types.StateJurisdiction)
 	if err != nil {
 		return fmt.Errorf("error scraping %s data: %v", types.StateJurisdiction, err)
 	}
-	if err := db.LoadCandidates(data); err != nil {
+	if err := db.LoadCandidates(data, *election); err != nil {
 		return err
 	}
-	if err := db.CheckAndProcessUpdate(data, hash, types.StateJurisdiction); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, types.StateJurisdiction, *election); err != nil {
 		return err
 	}
 
@@ -29,10 +33,10 @@ func initalLoad(db *database.DB) error {
 	if err != nil {
 		return fmt.Errorf("error scraping %s data: %v", types.CountyJurisdiction, err)
 	}
-	if err := db.LoadCandidates(data); err != nil {
+	if err := db.LoadCandidates(data, *election); err != nil {
 		return err
 	}
-	if err := db.CheckAndProcessUpdate(data, hash, types.CountyJurisdiction); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, types.CountyJurisdiction, *election); err != nil {
 		return err
 	}
 	return nil
@@ -42,12 +46,16 @@ func initalLoad(db *database.DB) error {
 func checkForUpdates(db *database.DB) error {
 	stateURL := os.Getenv("STATE_DATA")
 	countyURL := os.Getenv("COUNTY_DATA")
+	election, err := db.GetElection()
+	if err != nil {
+		return fmt.Errorf("error getting election: %v", err)
+	}
 
 	data, hash, err := csv.ParseFromURL(stateURL, types.StateJurisdiction)
 	if err != nil {
 		return fmt.Errorf("error scraping %s data: %v", types.StateJurisdiction, err)
 	}
-	if err := db.CheckAndProcessUpdate(data, hash, types.StateJurisdiction); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, types.StateJurisdiction, *election); err != nil {
 		return err
 	}
 
@@ -55,7 +63,7 @@ func checkForUpdates(db *database.DB) error {
 	if err != nil {
 		return fmt.Errorf("error scraping %s data: %v", types.CountyJurisdiction, err)
 	}
-	if err := db.CheckAndProcessUpdate(data, hash, types.CountyJurisdiction); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, types.CountyJurisdiction, *election); err != nil {
 		return err
 	}
 

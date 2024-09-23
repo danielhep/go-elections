@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -76,14 +77,28 @@ const (
 	CountyJurisdiction JurisdictionType = "County"
 )
 
+func (JurisdictionType) GormDataType() string {
+	return "string"
+}
+
 // Structs to represent the data in DB
+type Election struct {
+	gorm.Model
+	Name         string
+	ElectionDate time.Time
+	Contests     []Contest
+	Updates      []Update
+	Candidates   []Candidate
+}
+
 type Contest struct {
 	gorm.Model
-	Name       string
-	District   string
-	HasState   bool
-	HasCounty  bool
-	Candidates []Candidate
+	Name          string
+	District      string
+	Jurisdictions pq.StringArray `gorm:"type:text[]"`
+	Candidates    []Candidate
+	ElectionID    uint
+	Election      Election
 }
 
 type Candidate struct {
@@ -93,6 +108,8 @@ type Candidate struct {
 	ContestID   uint
 	Contest     Contest
 	VoteTallies []VoteTally
+	ElectionID  uint
+	Election    Election
 }
 
 type Update struct {
@@ -101,6 +118,8 @@ type Update struct {
 	Hash             string
 	JurisdictionType JurisdictionType
 	VoteTallies      []VoteTally
+	ElectionID       uint
+	Election         Election
 }
 
 type VoteTally struct {

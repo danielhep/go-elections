@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"log"
+	"os"
 	"slices"
 	"time"
 
@@ -34,12 +35,12 @@ func (db *DB) MigrateSchema() error {
 	return nil
 }
 
-func (db *DB) LoadCandidates(data []types.GenericVoteRecord) error {
+func (db *DB) LoadCandidates(data []types.GenericVoteRecord, election types.Election) error {
 	// Process the data based on jurisdiction type
 	var contests []types.Contest
 	var err error
 
-	contests, err = csv.ProcessContests(data)
+	contests, err = csv.ProcessContests(data, election)
 
 	tx := db.Begin()
 	// Ensure rollback if panic occurs
@@ -80,10 +81,13 @@ func (db *DB) LoadCandidates(data []types.GenericVoteRecord) error {
 
 // Creates an update entry in the database and then creates a VoteTally entry for
 // every entry in the GenericVoteRecord.
-func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, timestamp time.Time) error {
+func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, timestamp time.Time, election types.Election) error {
+	if len(data) == 0 {
+		return fmt.Errorf("no data to process")
+	}
 	jType := data[0].JurisdictionType
 	if slices.ContainsFunc(data, func(entry types.GenericVoteRecord) bool { return entry.JurisdictionType != data[0].JurisdictionType }) {
-		return fmt.Errorf("Error, found inconsistent jurisdiction types while updating vote tallies.")
+		return fmt.Errorf("error, found inconsistent jurisdiction types while updating vote tallies")
 	}
 	// Start a transaction
 	tx := db.Begin()
@@ -104,6 +108,7 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 		Timestamp:        timestamp,
 		Hash:             hash,
 		JurisdictionType: jType,
+		ElectionID:       election.ID,
 	}
 	if err := tx.Create(update).Error; err != nil {
 		tx.Rollback()
@@ -157,12 +162,12 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 			VotePercentage: record.VotePercentage,
 			ContestID:      contest.ID,
 		}
-		switch jType {
-		case types.CountyJurisdiction:
-			db.Model(&contest).Update("HasCounty", true)
-		case types.StateJurisdiction:
-			db.Model(&contest).Update("HasState", true)
+
+		if !slices.Contains(contest.Jurisdictions, string(jType)) {
+			contest.Jurisdictions = append(contest.Jurisdictions, string(jType))
+			db.Model(&contest).Update("Jurisdictions", contest.Jurisdictions)
 		}
+
 		voteTallies = append(voteTallies, voteTally)
 	}
 	// Insert vote tallies in batches
@@ -178,12 +183,13 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 }
 
 // Checks the hash and publishes a new update if the has doesn't exist yet
-func (db *DB) CheckAndProcessUpdate(data []types.GenericVoteRecord, hash string, jurisdictionType types.JurisdictionType) error {
+func (db *DB) CheckAndProcessUpdate(data []types.GenericVoteRecord, hash string, jurisdictionType types.JurisdictionType, election types.Election) error {
 	var update types.Update
+	// Check to see if the update already exists
 	result := db.Where("hash = ?", hash).First(&update)
 	if result.Error == gorm.ErrRecordNotFound {
 		log.Printf("New %s update detected", jurisdictionType)
-		if err := db.UpdateVoteTallies(data, hash, time.Now()); err != nil {
+		if err := db.UpdateVoteTallies(data, hash, time.Now(), election); err != nil {
 			return fmt.Errorf("error updating %s data: %v", jurisdictionType, err)
 		}
 	} else if result.Error != nil {
@@ -200,4 +206,18 @@ func getContestKey(ballotTitle string, districtName string) string {
 }
 func getCandidateKey(contestID uint, ballotResponse string) string {
 	return fmt.Sprintf("%d-%s", contestID, ballotResponse)
+}
+
+func (db *DB) GetElection() (*types.Election, error) {
+	electionName := os.Getenv("ELECTION_NAME")
+	electionDate, err := time.Parse("2006-01-02", os.Getenv("ELECTION_DATE"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing ELECTION_DATE %s: %v", os.Getenv("ELECTION_DATE"), err)
+	}
+	election := &types.Election{
+		Name:         electionName,
+		ElectionDate: electionDate,
+	}
+	db.FirstOrCreate(&election, election)
+	return election, nil
 }

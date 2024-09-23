@@ -47,7 +47,7 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"bg-white shadow overflow-hidden sm:rounded-lg mb-6\"><div class=\"px-4 py-5 sm:px-6\"><h2 class=\"text-xl leading-6 font-medium text-gray-900\">Ballot Title: ")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -60,7 +60,7 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</h2><h3 class=\"text-lg leading-6 text-gray-700 mt-1\">District: ")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -73,12 +73,12 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</h3></div><div class=\"border-t border-gray-200 px-4 py-5 sm:p-0\"><div class=\"overflow-x-auto\"><table class=\"min-w-full divide-y divide-gray-200\"><thead class=\"bg-gray-50\"><tr><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Date</th>")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, candidate := range candidates {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right\">")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -91,12 +91,12 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</th>")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</tr></thead> <tbody class=\"bg-white divide-y divide-gray-200\">")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -112,12 +112,12 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 					return templ_7745c5c3_Err
 				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</tbody></table></div></div></div>")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 7)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if len(countyUpdates) > 0 {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"chart-data\" class=\"bg-white shadow overflow-hidden sm:rounded-lg\" chart-data=\"")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 8)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -130,12 +130,12 @@ func contestPage(contest types.Contest, candidates []types.Candidate, countyUpda
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" x-data=\"{data: JSON.parse(document.getElementById(&#39;chart-data&#39;).getAttribute(&#39;chart-data&#39;))}\" x-init=\"\n\t\t\t\tconst ctx = document.getElementById(&#39;voteChart&#39;).getContext(&#39;2d&#39;);\n    \t\t\tnew Chart(ctx, {\n    \t\t\t\ttype: &#39;line&#39;,\n    \t\t\t\tdata: data,\n    \t\t\t\toptions: {\n    \t\t\t\t\tresponsive: true,\n    \t\t\t\t\tplugins: {\n    \t\t\t\t\t\tlegend: {\n    \t\t\t\t\t\t\tposition: &#39;top&#39;,\n    \t\t\t\t\t\t},\n    \t\t\t\t\t\ttitle: {\n    \t\t\t\t\t\t\tdisplay: true,\n    \t\t\t\t\t\t\ttext: &#39;King County Votes Over Time&#39;\n    \t\t\t\t\t\t}\n    \t\t\t\t\t}\n    \t\t\t\t}\n    \t\t\t});\n            \"><canvas id=\"voteChart\" width=\"400\" height=\"200\"></canvas></div>")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 9)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" <div class=\"mt-4\"><a href=\"/\" class=\"text-indigo-600 hover:text-indigo-900\">Back to Main Page</a></div>")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 10)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -167,22 +167,22 @@ func tableRow(update types.Update, candidates []types.Candidate) templ.Component
 			templ_7745c5c3_Var7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr class=\"text-right\"><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900\"><div class=\"flex items-center gap-2\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 11)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if update.JurisdictionType == types.CountyJurisdiction {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<img src=\"/static/kingcounty.jpg\" class=\"h-6 rounded-md\" alt=\"This row is from King County data.\">")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 12)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if update.JurisdictionType == types.StateJurisdiction {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<img src=\"/static/stateflag.jpg\" class=\"h-6 rounded-md\" alt=\"This row is from the WA Secretary of State.\">")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 13)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<p class=\"pt-[2px]\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 14)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -195,12 +195,12 @@ func tableRow(update types.Update, candidates []types.Candidate) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</p></div></td>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 15)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, candidate := range candidates {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-500 justify-righ\">")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 16)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -208,12 +208,12 @@ func tableRow(update types.Update, candidates []types.Candidate) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</td>")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 17)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</tr>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 18)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -239,7 +239,7 @@ func voteCountAndPercentage(votes int, percentage float32) templ.Component {
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<p>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 19)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -252,7 +252,7 @@ func voteCountAndPercentage(votes int, percentage float32) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</p><p>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 20)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -265,7 +265,7 @@ func voteCountAndPercentage(votes int, percentage float32) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</p>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 21)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

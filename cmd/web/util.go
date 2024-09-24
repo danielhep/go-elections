@@ -4,10 +4,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/danielhep/go-elections/internal/types"
+	"github.com/danielhep/go-elections/internal"
 )
 
-func sortCandidatesByLatestVotes(candidates []types.BallotResponse) {
+func sortCandidatesByLatestVotes(candidates []internal.BallotResponse) {
 	sort.Slice(candidates, func(i, j int) bool {
 		latestVotesI := getLatestVotes(candidates[i])
 		latestVotesJ := getLatestVotes(candidates[j])
@@ -15,7 +15,7 @@ func sortCandidatesByLatestVotes(candidates []types.BallotResponse) {
 	})
 }
 
-func getLatestVotes(candidate types.BallotResponse) int {
+func getLatestVotes(candidate internal.BallotResponse) int {
 	if len(candidate.VoteTallies) == 0 {
 		return 0
 	}

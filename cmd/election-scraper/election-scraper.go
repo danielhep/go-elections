@@ -6,44 +6,42 @@ import (
 	"os"
 	"time"
 
-	"github.com/danielhep/go-elections/internal/csv"
-	"github.com/danielhep/go-elections/internal/database"
-	"github.com/danielhep/go-elections/internal/types"
+	"github.com/danielhep/go-elections/internal"
 )
 
-func initalLoad(db *database.DB) error {
+func initalLoad(db *internal.DB) error {
 	stateURL := os.Getenv("STATE_DATA")
 	countyURL := os.Getenv("COUNTY_DATA")
 	election, err := db.GetElection()
 	if err != nil {
 		return fmt.Errorf("error getting election: %v", err)
 	}
-	data, hash, err := csv.ParseFromURL(stateURL, types.StateJurisdiction)
+	data, hash, err := internal.ParseFromURL(stateURL, internal.StateJurisdiction)
 	if err != nil {
-		return fmt.Errorf("error scraping %s data: %v", types.StateJurisdiction, err)
+		return fmt.Errorf("error scraping %s data: %v", internal.StateJurisdiction, err)
 	}
 	if err := db.LoadBallotResponses(data, *election); err != nil {
 		return err
 	}
-	if err := db.CheckAndProcessUpdate(data, hash, types.StateJurisdiction, *election); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, internal.StateJurisdiction, *election); err != nil {
 		return err
 	}
 
-	data, hash, err = csv.ParseFromURL(countyURL, types.CountyJurisdiction)
+	data, hash, err = internal.ParseFromURL(countyURL, internal.CountyJurisdiction)
 	if err != nil {
-		return fmt.Errorf("error scraping %s data: %v", types.CountyJurisdiction, err)
+		return fmt.Errorf("error scraping %s data: %v", internal.CountyJurisdiction, err)
 	}
 	if err := db.LoadBallotResponses(data, *election); err != nil {
 		return err
 	}
-	if err := db.CheckAndProcessUpdate(data, hash, types.CountyJurisdiction, *election); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, internal.CountyJurisdiction, *election); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Function to check for updates
-func checkForUpdates(db *database.DB) error {
+func checkForUpdates(db *internal.DB) error {
 	stateURL := os.Getenv("STATE_DATA")
 	countyURL := os.Getenv("COUNTY_DATA")
 	election, err := db.GetElection()
@@ -51,19 +49,19 @@ func checkForUpdates(db *database.DB) error {
 		return fmt.Errorf("error getting election: %v", err)
 	}
 
-	data, hash, err := csv.ParseFromURL(stateURL, types.StateJurisdiction)
+	data, hash, err := internal.ParseFromURL(stateURL, internal.StateJurisdiction)
 	if err != nil {
-		return fmt.Errorf("error scraping %s data: %v", types.StateJurisdiction, err)
+		return fmt.Errorf("error scraping %s data: %v", internal.StateJurisdiction, err)
 	}
-	if err := db.CheckAndProcessUpdate(data, hash, types.StateJurisdiction, *election); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, internal.StateJurisdiction, *election); err != nil {
 		return err
 	}
 
-	data, hash, err = csv.ParseFromURL(countyURL, types.CountyJurisdiction)
+	data, hash, err = internal.ParseFromURL(countyURL, internal.CountyJurisdiction)
 	if err != nil {
-		return fmt.Errorf("error scraping %s data: %v", types.CountyJurisdiction, err)
+		return fmt.Errorf("error scraping %s data: %v", internal.CountyJurisdiction, err)
 	}
-	if err := db.CheckAndProcessUpdate(data, hash, types.CountyJurisdiction, *election); err != nil {
+	if err := db.CheckAndProcessUpdate(data, hash, internal.CountyJurisdiction, *election); err != nil {
 		return err
 	}
 
@@ -78,7 +76,7 @@ func main() {
 	}
 
 	// Connect to the database
-	db, err := database.NewDB(pgURL)
+	db, err := internal.NewDB(pgURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

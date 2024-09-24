@@ -1,4 +1,4 @@
-package types
+package internal
 
 import (
 	"time"
@@ -77,13 +77,10 @@ const (
 	CountyJurisdiction JurisdictionType = "County"
 )
 
-func (JurisdictionType) GormDataType() string {
-	return "string"
-}
-
 // Structs to represent the data in DB
 type Election struct {
 	gorm.Model
+	ID           string
 	Name         string
 	ElectionDate time.Time
 	Contests     []Contest
@@ -95,9 +92,10 @@ type Contest struct {
 	gorm.Model
 	BallotTitle     string
 	District        string
+	ContestKey      string         `gorm:"index"`
 	Jurisdictions   pq.StringArray `gorm:"type:text[]"`
 	BallotResponses []BallotResponse
-	ElectionID      uint
+	ElectionID      string
 	Election        Election
 }
 
@@ -108,7 +106,7 @@ type BallotResponse struct {
 	ContestID   uint
 	Contest     Contest
 	VoteTallies []VoteTally
-	ElectionID  uint
+	ElectionID  string
 	Election    Election
 }
 
@@ -118,7 +116,7 @@ type Update struct {
 	Hash             string `gorm:"uniqueIndex"`
 	JurisdictionType JurisdictionType
 	VoteTallies      []VoteTally
-	ElectionID       uint
+	ElectionID       string
 	Election         Election
 }
 

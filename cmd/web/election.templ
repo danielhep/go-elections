@@ -2,17 +2,26 @@ package main
 
 import (
 	"fmt"
-	"github.com/danielhep/go-elections/internal/types"
 	"maps"
 	"slices"
 	"strings"
+	"github.com/danielhep/go-elections/internal"
 )
 
-templ mainPage(contests []types.Contest) {
+templ electionPage(election internal.Election, contests []internal.Contest) {
 	@layout("Election Results") {
+		<div class="mb-4">
+			<a href="/" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+					<path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+				</svg>
+				Back to all elections
+			</a>
+		</div>
 		<div class="bg-white shadow overflow-hidden sm:rounded-lg">
-			<div class="px-4 py-5 sm:px-6 flex">
-				<h2 class="text-xl font-semibold text-gray-900">Contests by Ballot Title</h2>
+			<div class="px-4 py-5 sm:px-6">
+				<h2 class="text-xl font-semibold text-gray-900">{ election.Name }</h2>
+				<p class="text-lg leading-6 text-gray-700 mt-1">Election Date: { formatDate(election.ElectionDate) }</p>
 			</div>
 			<div class="border-t border-gray-200" id="contests">
 				@groupContests(groupContestsByBallotTitle(contests))
@@ -21,7 +30,7 @@ templ mainPage(contests []types.Contest) {
 	}
 }
 
-templ groupContests(groupedContests map[string][]types.Contest) {
+templ groupContests(groupedContests map[string][]internal.Contest) {
 	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
 		for _, contest := range getSortedContests(groupedContests) {
 			<div class="bg-gray-50 rounded-lg overflow-hidden shadow" x-data="{ expanded: false }">
@@ -31,7 +40,7 @@ templ groupContests(groupedContests map[string][]types.Contest) {
 				<ul class="divide-y divide-gray-200">
 					for i, contest := range groupedContests[contest] {
 						<li x-show={ fmt.Sprintf("expanded || %d < 5", i) }>
-							<a href={ templ.URL(fmt.Sprintf("/contest/%d", contest.ID)) } class="block hover:bg-gray-100 px-4 py-3 transition duration-150 ease-in-out flex gap-2">
+							<a href={ templ.URL(fmt.Sprintf("/%s/contest/%s", contest.Election.ID, contest.ContestKey)) } class="block hover:bg-gray-100 px-4 py-3 transition duration-150 ease-in-out flex gap-2">
 								<p class="text-sm font-medium text-gray-700">{ contest.District }</p>
 								@flagIcons(contest)
 							</a>
@@ -52,17 +61,17 @@ templ groupContests(groupedContests map[string][]types.Contest) {
 	</div>
 }
 
-templ flagIcons(contest types.Contest) {
-	if slices.Contains(contest.Jurisdictions, string(types.CountyJurisdiction)) {
+templ flagIcons(contest internal.Contest) {
+	if slices.Contains(contest.Jurisdictions, string(internal.CountyJurisdiction)) {
 		<img src="/static/kingcounty.jpg" class="h-6 rounded-md" alt="This entry includes data from King County."/>
 	}
-	if slices.Contains(contest.Jurisdictions, string(types.StateJurisdiction)) {
+	if slices.Contains(contest.Jurisdictions, string(internal.StateJurisdiction)) {
 		<img src="/static/stateflag.jpg" class="h-6 rounded-md" alt="This entry includes data from the Secretary of State."/>
 	}
 }
 
-func groupContestsByBallotTitle(contests []types.Contest) map[string][]types.Contest {
-	grouped := make(map[string][]types.Contest)
+func groupContestsByBallotTitle(contests []internal.Contest) map[string][]internal.Contest {
+	grouped := make(map[string][]internal.Contest)
 	for _, contest := range contests {
 		grouped[contest.BallotTitle] = append(grouped[contest.BallotTitle], contest)
 	}
@@ -70,7 +79,7 @@ func groupContestsByBallotTitle(contests []types.Contest) map[string][]types.Con
 	return grouped
 }
 
-func getSortedContests(groupedContests map[string][]types.Contest) []string {
+func getSortedContests(groupedContests map[string][]internal.Contest) []string {
 	contests := slices.Collect(maps.Keys(groupedContests))
 	slices.SortStableFunc(contests, func(i, j string) int {
 		return strings.Compare(i, j)

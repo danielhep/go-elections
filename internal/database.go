@@ -1,4 +1,4 @@
-package database
+package internal
 
 import (
 	"fmt"
@@ -7,8 +7,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/danielhep/go-elections/internal/csv"
-	"github.com/danielhep/go-elections/internal/types"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -27,7 +25,7 @@ func NewDB(pgURL string) (*DB, error) {
 }
 
 func (db *DB) MigrateSchema() error {
-	err := db.AutoMigrate(&types.Contest{}, &types.BallotResponse{}, &types.Update{}, &types.VoteTally{})
+	err := db.AutoMigrate(&Contest{}, &BallotResponse{}, &Update{}, &VoteTally{})
 	if err != nil {
 		return fmt.Errorf("failed to migrate database schema: %v", err)
 	}
@@ -35,12 +33,12 @@ func (db *DB) MigrateSchema() error {
 	return nil
 }
 
-func (db *DB) LoadBallotResponses(data []types.GenericVoteRecord, election types.Election) error {
+func (db *DB) LoadBallotResponses(data []GenericVoteRecord, election Election) error {
 	// Process the data based on jurisdiction type
-	var contests []types.Contest
+	var contests []Contest
 	var err error
 
-	contests, err = csv.ProcessContests(data, election)
+	contests, err = ProcessContests(data, election)
 
 	tx := db.Begin()
 	// Ensure rollback if panic occurs
@@ -81,12 +79,12 @@ func (db *DB) LoadBallotResponses(data []types.GenericVoteRecord, election types
 
 // Creates an update entry in the database and then creates a VoteTally entry for
 // every entry in the GenericVoteRecord.
-func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, timestamp time.Time, election types.Election) error {
+func (db *DB) UpdateVoteTallies(data []GenericVoteRecord, hash string, timestamp time.Time, election Election) error {
 	if len(data) == 0 {
 		return fmt.Errorf("no data to process")
 	}
 	jType := data[0].JurisdictionType
-	if slices.ContainsFunc(data, func(entry types.GenericVoteRecord) bool { return entry.JurisdictionType != data[0].JurisdictionType }) {
+	if slices.ContainsFunc(data, func(entry GenericVoteRecord) bool { return entry.JurisdictionType != data[0].JurisdictionType }) {
 		return fmt.Errorf("error, found inconsistent jurisdiction types while updating vote tallies")
 	}
 	// Start a transaction
@@ -104,7 +102,7 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 	}()
 
 	// Create a new Update record
-	update := &types.Update{
+	update := &Update{
 		Timestamp:        timestamp,
 		Hash:             hash,
 		JurisdictionType: jType,
@@ -116,8 +114,8 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 	}
 
 	// Preload existing contests and candidates
-	var contests []types.Contest
-	var candidates []types.BallotResponse
+	var contests []Contest
+	var candidates []BallotResponse
 	if err := tx.Find(&contests).Error; err != nil {
 		tx.Rollback()
 		return err
@@ -128,7 +126,7 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 	}
 
 	// Create maps for quick lookups
-	contestMap := make(map[string]types.Contest)
+	contestMap := make(map[string]Contest)
 	for _, c := range contests {
 		key := getContestKey(c.BallotTitle, c.District)
 		contestMap[key] = c
@@ -140,7 +138,7 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 		candidateMap[key] = c.ID
 	}
 	// Process vote tallies
-	var voteTallies []types.VoteTally
+	var voteTallies []VoteTally
 	for _, record := range data {
 		contestKey := getContestKey(record.BallotTitle, record.DistrictName)
 		contest, contestExists := contestMap[contestKey]
@@ -155,7 +153,7 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 			return fmt.Errorf("candidate not found: %s", candidateKey)
 		}
 		// Create vote tally
-		voteTally := types.VoteTally{
+		voteTally := VoteTally{
 			BallotResponseID: ballotResponseID,
 			UpdateID:         update.ID,
 			Votes:            record.Votes,
@@ -183,8 +181,8 @@ func (db *DB) UpdateVoteTallies(data []types.GenericVoteRecord, hash string, tim
 }
 
 // Checks the hash and publishes a new update if the has doesn't exist yet
-func (db *DB) CheckAndProcessUpdate(data []types.GenericVoteRecord, hash string, jurisdictionType types.JurisdictionType, election types.Election) error {
-	var update types.Update
+func (db *DB) CheckAndProcessUpdate(data []GenericVoteRecord, hash string, jurisdictionType JurisdictionType, election Election) error {
+	var update Update
 	// Check to see if the update already exists
 	result := db.Where("hash = ?", hash).First(&update)
 	if result.Error == gorm.ErrRecordNotFound {
@@ -201,20 +199,13 @@ func (db *DB) CheckAndProcessUpdate(data []types.GenericVoteRecord, hash string,
 	return nil
 }
 
-func getContestKey(ballotTitle string, districtName string) string {
-	return fmt.Sprintf("%s-%s", ballotTitle, districtName)
-}
-func getCandidateKey(contestID uint, ballotResponse string) string {
-	return fmt.Sprintf("%d-%s", contestID, ballotResponse)
-}
-
-func (db *DB) GetElection() (*types.Election, error) {
+func (db *DB) GetElection() (*Election, error) {
 	electionName := os.Getenv("ELECTION_NAME")
 	electionDate, err := time.Parse("2006-01-02", os.Getenv("ELECTION_DATE"))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing ELECTION_DATE %s: %v", os.Getenv("ELECTION_DATE"), err)
 	}
-	election := &types.Election{
+	election := &Election{
 		Name:         electionName,
 		ElectionDate: electionDate,
 	}

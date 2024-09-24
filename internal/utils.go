@@ -1,6 +1,7 @@
-package types
+package internal
 
 import (
+	"fmt"
 	"strings"
 
 	"golang.org/x/text/cases"
@@ -48,4 +49,18 @@ func extractParty(partyField string) string {
 		partyField = partyField[1 : len(partyField)-1]
 	}
 	return normalizeString(strings.TrimPrefix(partyField, "Prefers "))
+}
+
+func getContestKey(ballotTitle string, districtName string) string {
+	ballotTitle = strings.ReplaceAll(ballotTitle, " ", "_")
+	districtName = strings.ReplaceAll(districtName, " ", "_")
+	return fmt.Sprintf("%s-%s", ballotTitle, districtName)
+}
+
+func getCandidateKey(contestID uint, ballotResponse string) string {
+	return fmt.Sprintf("%d-%s", contestID, ballotResponse)
+}
+
+func GetElectionKey(electionName string) string {
+	return strings.ReplaceAll(strings.ToLower(electionName), " ", "_")
 }

@@ -2,19 +2,28 @@ package main
 
 import (
 	"fmt"
-	"github.com/danielhep/go-elections/internal/types"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"github.com/danielhep/go-elections/internal"
 	"slices"
 	"time"
 )
 
-templ contestPage(contest types.Contest, ballotResponses []types.BallotResponse, countyUpdates []types.Update, stateUpdate *types.Update) {
+templ contestPage(contest internal.Contest, ballotResponses []internal.BallotResponse, countyUpdates []internal.Update, stateUpdate *internal.Update) {
 	@layout(contest.BallotTitle + " Results") {
+		<div class="mb-4">
+			<a href={ templ.URL(fmt.Sprintf("/%s/", contest.ElectionID)) } class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+					<path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+				</svg>
+				Back to all contests
+			</a>
+		</div>
 		<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
 			<div class="px-4 py-5 sm:px-6">
 				<h2 class="text-xl leading-6 font-medium text-gray-900">Ballot Title: { contest.BallotTitle }</h2>
 				<h3 class="text-lg leading-6 text-gray-700 mt-1">District: { contest.District }</h3>
+				<p class="text-lg leading-6 text-gray-700 mt-1">Election: { contest.Election.Name }</p>
 			</div>
 			<div class="border-t border-gray-200 px-4 py-5 sm:p-0">
 				<div class="overflow-x-auto">
@@ -74,13 +83,13 @@ templ contestPage(contest types.Contest, ballotResponses []types.BallotResponse,
 	}
 }
 
-templ tableRow(update types.Update, ballotResponses []types.BallotResponse) {
+templ tableRow(update internal.Update, ballotResponses []internal.BallotResponse) {
 	<tr class="text-right">
 		<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
 			<div class="flex items-center gap-2">
-				if update.JurisdictionType == types.CountyJurisdiction {
+				if update.JurisdictionType == internal.CountyJurisdiction {
 					<img src="/static/kingcounty.jpg" class="h-6 rounded-md" alt="This row is from King County data."/>
-				} else if update.JurisdictionType == types.StateJurisdiction {
+				} else if update.JurisdictionType == internal.StateJurisdiction {
 					<img src="/static/stateflag.jpg" class="h-6 rounded-md" alt="This row is from the WA Secretary of State."/>
 				}
 				<p class="pt-[2px]">{ formatFirstCol(update) }</p>
@@ -104,7 +113,7 @@ func printFormattedNumber(number int) string {
 	return p.Sprintf("%d\n", number)
 }
 
-func getAllUpdatesFromCandidate(candidate types.BallotResponse) (ret []types.Update) {
+func getAllUpdatesFromCandidate(candidate internal.BallotResponse) (ret []internal.Update) {
 	for _, voteTally := range candidate.VoteTallies {
 		if voteTally.Votes > 0 {
 			ret = append(ret, voteTally.Update)
@@ -113,20 +122,20 @@ func getAllUpdatesFromCandidate(candidate types.BallotResponse) (ret []types.Upd
 	return
 }
 
-func getBallotResponses(voteTallies []types.VoteTally) []types.BallotResponse {
-	candidateMap := make(map[uint]types.BallotResponse)
+func getBallotResponses(voteTallies []internal.VoteTally) []internal.BallotResponse {
+	candidateMap := make(map[uint]internal.BallotResponse)
 	for _, tally := range voteTallies {
 		candidateMap[tally.BallotResponseID] = tally.BallotResponse
 	}
 
-	var candidates []types.BallotResponse
+	var candidates []internal.BallotResponse
 	for _, candidate := range candidateMap {
 		candidates = append(candidates, candidate)
 	}
 	return candidates
 }
 
-func getVotesForUpdate(candidate types.BallotResponse, updateID uint) (int, float32) {
+func getVotesForUpdate(candidate internal.BallotResponse, updateID uint) (int, float32) {
 	for _, tally := range candidate.VoteTallies {
 		if tally.UpdateID == updateID {
 			return tally.Votes, tally.VotePercentage
@@ -135,8 +144,8 @@ func getVotesForUpdate(candidate types.BallotResponse, updateID uint) (int, floa
 	return 0, 0
 }
 
-func formatFirstCol(update types.Update) string {
-	if update.JurisdictionType == types.CountyJurisdiction {
+func formatFirstCol(update internal.Update) string {
+	if update.JurisdictionType == internal.CountyJurisdiction {
 		return formatDate(update.Timestamp)
 	} else {
 		return "State (final tally)"
@@ -158,14 +167,14 @@ type chartData struct {
 	} `json:"datasets"`
 }
 
-func getChartData(candidates []types.BallotResponse) chartData {
+func getChartData(candidates []internal.BallotResponse) chartData {
 	// Prepare data for the chart
 	datasets := make(map[string][]int)
 	var labels []string
 
 	for i, candidate := range candidates {
 		for _, voteTally := range candidate.VoteTallies {
-			if voteTally.Update.JurisdictionType == types.StateJurisdiction {
+			if voteTally.Update.JurisdictionType == internal.StateJurisdiction {
 				continue
 			}
 			if i == 0 {

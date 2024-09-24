@@ -1,0 +1,58 @@
+package main
+
+import (
+	"fmt"
+	"github.com/danielhep/go-elections/internal"
+)
+
+templ rootPage(elections []internal.Election) {
+	@layout("Available Elections") {
+		<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+			<div class="px-4 py-5 sm:px-6">
+				<h2 class="text-xl font-semibold text-gray-900">Available Elections</h2>
+			</div>
+			<div class="border-t border-gray-200">
+				@groupElections(elections)
+			</div>
+		</div>
+	}
+}
+
+templ groupElections(elections []internal.Election) {
+	<div class="px-4 py-5 sm:p-6">
+		for year, yearElections := range groupElectionsByYear(elections) {
+			<div class="mb-8">
+				<h3 class="text-lg font-medium text-gray-900 mb-4">{ year }</h3>
+				<ul class="divide-y divide-gray-200">
+					for _, election := range yearElections {
+						<li>
+							<a href={ templ.URL(fmt.Sprintf("/%s/", election.ID)) } class="block hover:bg-gray-50">
+								<div class="px-4 py-4 sm:px-6">
+									<div class="flex items-center justify-between">
+										<p class="text-sm font-medium text-indigo-600 truncate">
+											{ election.Name }
+										</p>
+										<div class="ml-2 flex-shrink-0 flex">
+											<p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+												{ formatDate(election.ElectionDate) }
+											</p>
+										</div>
+									</div>
+								</div>
+							</a>
+						</li>
+					}
+				</ul>
+			</div>
+		}
+	</div>
+}
+
+func groupElectionsByYear(elections []internal.Election) map[string][]internal.Election {
+	grouped := make(map[string][]internal.Election)
+	for _, election := range elections {
+		year := election.ElectionDate.Format("2006")
+		grouped[year] = append(grouped[year], election)
+	}
+	return grouped
+}

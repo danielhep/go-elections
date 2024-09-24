@@ -8,8 +8,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/danielhep/go-elections/internal/database"
-	"github.com/danielhep/go-elections/internal/types"
+	"github.com/danielhep/go-elections/internal"
 	"github.com/gorilla/mux"
 )
 
@@ -23,39 +22,63 @@ func main() {
 	}
 
 	// Connect to the database
-	db, err := database.NewDB(pgURL)
+	db, err := internal.NewDB(pgURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
 	r := mux.NewRouter()
 
-	// Main page route
+	// Root page route
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		var contests []types.Contest
-		if err := db.Find(&contests).Error; err != nil {
+		var elections []internal.Election
+		if err := db.Order("election_date DESC").Find(&elections).Error; err != nil {
+			http.Error(w, "Error fetching elections", http.StatusInternalServerError)
+			return
+		}
+		err = rootPage(elections).Render(r.Context(), w)
+		if err != nil {
+			http.Error(w, "Error rendering page", http.StatusInternalServerError)
+		}
+	}).Methods("GET")
+
+	// Election page route
+	r.HandleFunc("/{electionID}/", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		electionID := vars["electionID"]
+		var contests []internal.Contest
+		if err := db.Where("election_id = ?", electionID).Preload("Election").Find(&contests).Error; err != nil {
 			http.Error(w, "Error fetching contests", http.StatusInternalServerError)
 			return
 		}
-		err = mainPage(contests).Render(r.Context(), w)
+		var election internal.Election
+		if err := db.Where("id = ?", electionID).First(&election).Error; err != nil {
+			http.Error(w, "Election not found", http.StatusNotFound)
+			return
+		}
+		err = electionPage(election, contests).Render(r.Context(), w)
 		if err != nil {
 			http.Error(w, "Error rendering page", http.StatusInternalServerError)
 		}
 	}).Methods("GET")
 
 	// Contest details route
-	r.HandleFunc("/contest/{id}", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/{electionID}/contest/{contestKey}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		contestID := vars["id"]
+		contestKey := vars["contestKey"]
+		electionID := vars["electionID"]
 
-		var contest types.Contest
-		if err := db.First(&contest, contestID).Error; err != nil {
+		contest := internal.Contest{
+			ElectionID: electionID,
+			ContestKey: contestKey,
+		}
+		if err := db.Preload("Election").First(&contest, contest).Error; err != nil {
 			http.Error(w, "Contest not found", http.StatusNotFound)
 			return
 		}
 
-		var candidates []types.BallotResponse
-		if err := db.Where("contest_id = ?", contestID).
+		var candidates []internal.BallotResponse
+		if err := db.Where("contest_id = ?", contest.ID).
 			Preload("VoteTallies").
 			Preload("VoteTallies.Update").
 			Find(&candidates).Error; err != nil {
@@ -66,10 +89,10 @@ func main() {
 		sortCandidatesByLatestVotes(candidates)
 
 		// Get the countyUpdates sorted
-		var countyUpdates []types.Update
-		var stateUpdate *types.Update
+		var countyUpdates []internal.Update
+		var stateUpdate *internal.Update
 		for _, voteTally := range candidates[0].VoteTallies {
-			if voteTally.Update.JurisdictionType == types.StateJurisdiction {
+			if voteTally.Update.JurisdictionType == internal.StateJurisdiction {
 				stateUpdate = &voteTally.Update
 			} else {
 				countyUpdates = append(countyUpdates, voteTally.Update)

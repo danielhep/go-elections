@@ -8,9 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/danielhep/go-elections/internal/csv"
-	"github.com/danielhep/go-elections/internal/database"
-	"github.com/danielhep/go-elections/internal/types"
+	"github.com/danielhep/go-elections/internal"
 	"github.com/urfave/cli/v2"
 )
 
@@ -61,7 +59,7 @@ func runImport(c *cli.Context) error {
 	}
 
 	// Initialize database connection
-	db, err := database.NewDB(dbURL)
+	db, err := internal.NewDB(dbURL)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %v", err)
 	}
@@ -72,9 +70,10 @@ func runImport(c *cli.Context) error {
 	}
 
 	// Create an election object
-	election := types.Election{
+	election := internal.Election{
 		Name:         electionName,
 		ElectionDate: electionDate,
+		ID:           internal.GetElectionKey(electionName),
 	}
 	db.FirstOrCreate(&election, election)
 
@@ -89,11 +88,11 @@ func runImport(c *cli.Context) error {
 			fmt.Printf("Processing file: %s\n", file.Name())
 
 			// Determine jurisdiction type
-			var jType types.JurisdictionType
+			var jType internal.JurisdictionType
 			if strings.Contains(file.Name(), "allstate") {
-				jType = types.StateJurisdiction
+				jType = internal.StateJurisdiction
 			} else if strings.Contains(file.Name(), "webresults") {
-				jType = types.CountyJurisdiction
+				jType = internal.CountyJurisdiction
 			} else {
 				return fmt.Errorf("unknown jurisdiction type from filename: %s", file.Name())
 			}
@@ -121,7 +120,7 @@ func runImport(c *cli.Context) error {
 			}
 			defer f.Close()
 
-			records, hash, err := csv.Parse(f, jType)
+			records, hash, err := internal.Parse(f, jType)
 			if err != nil {
 				log.Printf("Failed to parse CSV file %s: %v", file.Name(), err)
 				continue

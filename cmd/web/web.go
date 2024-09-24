@@ -108,6 +108,14 @@ func main() {
 		}
 	}).Methods("GET")
 
+	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte("OK"))
+		if err != nil {
+			http.Error(w, "Error writing response", http.StatusInternalServerError)
+		}
+	}).Methods("GET")
+
 	staticFS, err := fs.Sub(staticFiles, "images")
 	if err != nil {
 		log.Fatal(err)

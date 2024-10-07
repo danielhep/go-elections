@@ -9,6 +9,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type DB struct {
@@ -16,7 +17,14 @@ type DB struct {
 }
 
 func NewDB(pgURL string) (*DB, error) {
-	db, err := gorm.Open(postgres.Open(pgURL), &gorm.Config{})
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			IgnoreRecordNotFoundError: true, // Ignore ErrRecordNotFound error for logger
+		},
+	)
+
+	db, err := gorm.Open(postgres.Open(pgURL), &gorm.Config{Logger: newLogger})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
@@ -178,6 +186,16 @@ func (db *DB) UpdateVoteTallies(data []GenericVoteRecord, hash string, timestamp
 	}
 
 	return tx.Commit().Error
+}
+
+func (db *DB) UpdateHashExists(hash string) (bool, Update) {
+	var update Update
+	result := db.Where("hash = ?", hash).First(&update)
+	return result.Error == nil, update
+}
+
+func (db *DB) DeleteUpdate(update Update) {
+	db.Unscoped().Delete(&update)
 }
 
 // Checks the hash and publishes a new update if the has doesn't exist yet

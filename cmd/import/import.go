@@ -29,6 +29,11 @@ func main() {
 				Aliases:  []string{"d"},
 				Required: true,
 			},
+			&cli.BoolFlag{
+				Name:    "overwrite",
+				Usage:   "Overwrite existing data for this election.",
+				Aliases: []string{"o"},
+			},
 			&cli.StringFlag{
 				Name:     "name",
 				Usage:    "Name of the election (2024 Primary)",
@@ -53,6 +58,7 @@ func runImport(c *cli.Context) error {
 	dbURL := c.String("db")
 	electionName := c.String("name")
 	electionDateStr := c.String("date")
+	overwrite := c.Bool("overwrite")
 	electionDate, err := time.Parse("2006-01-02", electionDateStr)
 	if err != nil {
 		return fmt.Errorf("failed to parse election date: %v", err)
@@ -124,6 +130,15 @@ func runImport(c *cli.Context) error {
 			if err != nil {
 				log.Printf("Failed to parse CSV file %s: %v", file.Name(), err)
 				continue
+			}
+
+			exists, updateID := db.UpdateHashExists(hash)
+			if exists && !overwrite {
+				fmt.Printf("Hash %s already exists. Skipping file: %s\n", hash, file.Name())
+				continue
+			} else if exists && overwrite {
+				fmt.Printf("Hash %s already exists, overwriting now. %s\n", hash, file.Name())
+				db.DeleteUpdate(updateID)
 			}
 
 			// Load the responses

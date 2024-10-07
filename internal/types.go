@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -96,7 +97,7 @@ type Contest struct {
 	Jurisdictions   pq.StringArray `gorm:"type:text[]"`
 	BallotResponses []BallotResponse
 	ElectionID      string
-	Election        Election
+	Election        Election `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
 }
 
 type BallotResponse struct {
@@ -104,10 +105,10 @@ type BallotResponse struct {
 	Name        string
 	Party       *string
 	ContestID   uint
-	Contest     Contest
+	Contest     Contest `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
 	VoteTallies []VoteTally
 	ElectionID  string
-	Election    Election
+	Election    Election `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
 }
 
 type Update struct {
@@ -120,14 +121,23 @@ type Update struct {
 	Election         Election
 }
 
+func (u *Update) BeforeDelete(tx *gorm.DB) (err error) {
+	// Delete all vote tallies associated with this update
+	fmt.Printf("Deleting vote tallies for update %v\n", u.ID)
+	if err := tx.Unscoped().Where("update_id = ?", u.ID).Delete(&VoteTally{}).Error; err != nil {
+		return fmt.Errorf("error deleting vote tallies: %v", err)
+	}
+	return nil
+}
+
 type VoteTally struct {
 	gorm.Model
 	BallotResponseID uint
-	BallotResponse   BallotResponse
+	BallotResponse   BallotResponse `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
 	UpdateID         uint
-	Contest          Contest
+	Contest          Contest `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
 	ContestID        uint
-	Update           Update
+	Update           Update `gorm:"constraint:OnDelete:CASCADE"`
 	Votes            int
 	VotePercentage   float32
 }

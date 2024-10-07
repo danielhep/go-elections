@@ -8,7 +8,7 @@ let
     src = ./.;
     vendorHash = "sha256-ZIrYNpiKPexV6ChgdYzcGFrq/BglOoNf4lWEDaRP+jM=";
     # vendorHash = pkgs.lib.fakeHash;
-    subPackages = [ "cmd/election-scraper" "cmd/historical-import" "cmd/web" ];
+    subPackages = [ "cmd/election-scraper" "cmd/import" "cmd/web" ];
   };
 in
 pkgs.dockerTools.buildImage {

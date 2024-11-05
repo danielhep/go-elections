@@ -34,9 +34,17 @@ func normalizeString(s string) string {
 	s = strings.ReplaceAll(s, "&quot;", "\"")
 	s = strings.ReplaceAll(s, "SUPREME COURT", "State Supreme Court")
 	s = strings.ReplaceAll(s, "of the United States", "")
-	words := strings.Fields(strings.ToLower(s))
+	s = strings.ReplaceAll(s, "STATEWIDE", "State of Washington")
+	words := strings.Fields(s)
 	for i, word := range words {
-		if word != "of" && word != "the" && word != "and" && word != "in" && word != "for" {
+		lcWord := strings.ToLower(word)
+		if lcWord != "of" &&
+			lcWord != "the" &&
+			lcWord != "and" &&
+			lcWord != "in" &&
+			lcWord != "for" &&
+			word != "US" &&
+			word != "USA" {
 			words[i] = cases.Title(language.AmericanEnglish).String(word)
 		}
 	}

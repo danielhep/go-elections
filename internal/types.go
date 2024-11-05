@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -84,20 +83,20 @@ type Election struct {
 	ID           string
 	Name         string
 	ElectionDate time.Time
-	Contests     []Contest
-	Updates      []Update
-	Candidates   []BallotResponse
+	Contests     []Contest        `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
+	Updates      []Update         `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
+	Candidates   []BallotResponse `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
 }
 
 type Contest struct {
 	gorm.Model
 	BallotTitle     string
 	District        string
-	ContestKey      string         `gorm:"index"`
-	Jurisdictions   pq.StringArray `gorm:"type:text[]"`
-	BallotResponses []BallotResponse
+	ContestKey      string           `gorm:"index"`
+	Jurisdictions   pq.StringArray   `gorm:"type:text[]"`
+	BallotResponses []BallotResponse `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
 	ElectionID      string
-	Election        Election `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
+	Election        Election
 }
 
 type BallotResponse struct {
@@ -105,10 +104,10 @@ type BallotResponse struct {
 	Name        string
 	Party       *string
 	ContestID   uint
-	Contest     Contest `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
-	VoteTallies []VoteTally
+	Contest     Contest
+	VoteTallies []VoteTally `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
 	ElectionID  string
-	Election    Election `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
+	Election    Election
 }
 
 type Update struct {
@@ -116,19 +115,19 @@ type Update struct {
 	Timestamp        time.Time
 	Hash             string `gorm:"uniqueIndex"`
 	JurisdictionType JurisdictionType
-	VoteTallies      []VoteTally
+	VoteTallies      []VoteTally `gorm:"constraint:OnDelete:CASCADE,onUpdate:CASCADE"`
 	ElectionID       string
 	Election         Election
 }
 
-func (u *Update) BeforeDelete(tx *gorm.DB) (err error) {
-	// Delete all vote tallies associated with this update
-	fmt.Printf("Deleting vote tallies for update %v\n", u.ID)
-	if err := tx.Unscoped().Where("update_id = ?", u.ID).Delete(&VoteTally{}).Error; err != nil {
-		return fmt.Errorf("error deleting vote tallies: %v", err)
-	}
-	return nil
-}
+// func (u *Update) BeforeDelete(tx *gorm.DB) (err error) {
+// 	// Delete all vote tallies associated with this update
+// 	fmt.Printf("Deleting vote tallies for update %v\n", u.ID)
+// 	if err := tx.Unscoped().Where("update_id = ?", u.ID).Delete(&VoteTally{}).Error; err != nil {
+// 		return fmt.Errorf("error deleting vote tallies: %v", err)
+// 	}
+// 	return nil
+// }
 
 type VoteTally struct {
 	gorm.Model

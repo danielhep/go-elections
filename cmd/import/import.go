@@ -31,7 +31,7 @@ func main() {
 			},
 			&cli.BoolFlag{
 				Name:    "overwrite",
-				Usage:   "Overwrite existing data for this election.",
+				Usage:   "Overwrite existing data for this election. Note: Deletes election with matching name.",
 				Aliases: []string{"o"},
 			},
 			&cli.StringFlag{
@@ -75,12 +75,23 @@ func runImport(c *cli.Context) error {
 		return fmt.Errorf("failed to migrate schema: %v", err)
 	}
 
-	// Create an election object
 	election := internal.Election{
-		Name:         electionName,
-		ElectionDate: electionDate,
-		ID:           internal.GetElectionKey(electionName),
+		ID: internal.GetElectionKey(electionName),
 	}
+	if overwrite {
+		db.Limit(1).Find(&election)
+		if election.Name != "" {
+			fmt.Printf("🗑️ Deleting election with name %s\n and ID %s\n", election.Name, election.ID)
+			db.Unscoped().Delete(&election)
+		} else {
+			fmt.Printf("No election with name %s found\n", electionName)
+		}
+	}
+
+	election.Name = electionName
+	election.ElectionDate = electionDate
+
+	// Create an election object
 	db.FirstOrCreate(&election, election)
 
 	// Process CSV files

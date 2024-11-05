@@ -195,7 +195,7 @@ func (db *DB) UpdateHashExists(hash string) (bool, Update) {
 }
 
 func (db *DB) DeleteUpdate(update Update) {
-	db.Unscoped().Delete(&update)
+	db.Delete(&update)
 }
 
 // Checks the hash and publishes a new update if the has doesn't exist yet
